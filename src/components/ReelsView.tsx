@@ -395,13 +395,6 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
         </div>
       )}
 
-      {/* Top left - Viewer count */}
-      <div className="absolute top-4 left-4 z-30">
-        <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full">
-          <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
-          <span className="text-white text-sm font-semibold">{reel.views_count}</span>
-        </div>
-      </div>
 
       {/* Right side actions */}
       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-5 z-30">
