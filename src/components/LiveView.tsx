@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Heart, Gift, Lock, Send, UserPlus, Coins, X, Play, Check, ShoppingBag } from 'lucide-react';
+import { Heart, Gift, Lock, Send, UserPlus, Coins, X, Play, Check, ShoppingBag, Package, Clock, Eye } from 'lucide-react';
 import { LIVE_STREAMS, MIMOS } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
 
@@ -21,6 +21,12 @@ interface ProductItem {
   badge: string;
 }
 
+interface PurchasedItem extends ProductItem {
+  purchasedAt: Date;
+  seller: string;
+  sellerImage: string;
+}
+
 const MOCK_USERS = [{ username: 'maria_vip', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50', isVip: true }, { username: 'joao123', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50', isVip: false }];
 const MOCK_MESSAGES = [{ text: 'Olá! 👋', hasMimo: false }, { text: 'Linda demais! 😍', hasMimo: false }, { text: 'Enviou 🌹', hasMimo: true, mimoIcon: '🌹', crisexAmount: 50 }];
 
@@ -33,8 +39,11 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
   const [showMimos, setShowMimos] = useState(false);
   const [showCrisexModal, setShowCrisexModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
+  const [selectedPurchased, setSelectedPurchased] = useState<PurchasedItem | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchasedItems, setPurchasedItems] = useState<PurchasedItem[]>([]);
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -73,6 +82,16 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
     if (!selectedProduct) return;
     if (balance >= selectedProduct.price) {
       setBalance(prev => prev - selectedProduct.price);
+      
+      // Add to purchased items
+      const newPurchase: PurchasedItem = {
+        ...selectedProduct,
+        purchasedAt: new Date(),
+        seller: currentStream?.streamer || 'Unknown',
+        sellerImage: currentStream?.streamerImage || '',
+      };
+      setPurchasedItems(prev => [newPurchase, ...prev]);
+      
       setPurchaseSuccess(true);
       toast({
         title: "Compra realizada! 🎉",
@@ -89,6 +108,15 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         variant: "destructive",
       });
     }
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
   };
 
   const progressPercent = (metaProgress / metaGoal) * 100;
@@ -171,7 +199,17 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 z-30">
         <button onClick={() => setIsFollowing(!isFollowing)} className="flex flex-col items-center gap-1 group"><div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${isFollowing ? 'gradient-primary' : 'bg-card/50 backdrop-blur-sm border border-border/30'}`}><UserPlus className={`w-5 h-5 ${isFollowing ? 'text-primary-foreground' : 'text-foreground'}`} /></div><span className="text-[10px] text-foreground font-medium">Seguir</span></button>
         <button onClick={() => setIsLiked(!isLiked)} className="flex flex-col items-center gap-1"><div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${isLiked ? 'bg-primary/20' : 'bg-card/50 backdrop-blur-sm border border-border/30'}`}><Heart className={`w-6 h-6 transition-all ${isLiked ? 'text-primary fill-primary animate-heart' : 'text-foreground'}`} /></div><span className="text-[10px] text-foreground font-medium">12.4K</span></button>
-        <button className="flex flex-col items-center gap-1"><div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-border/30 rounded-full flex items-center justify-center active:scale-90 transition-all"><Lock className="w-5 h-5 text-foreground" /></div><span className="text-[10px] text-foreground font-medium">Privado</span></button>
+        <button onClick={() => setShowHistoryModal(true)} className="flex flex-col items-center gap-1 relative">
+          <div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-border/30 rounded-full flex items-center justify-center active:scale-90 transition-all">
+            <Package className="w-5 h-5 text-foreground" />
+          </div>
+          {purchasedItems.length > 0 && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-[9px] font-bold text-primary-foreground">{purchasedItems.length}</span>
+            </div>
+          )}
+          <span className="text-[10px] text-foreground font-medium">Compras</span>
+        </button>
         <button onClick={() => setShowMimos(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center active:scale-90 transition-all shadow-glow"><Gift className="w-5 h-5 text-primary-foreground" /></div><span className="text-[10px] text-foreground font-medium">Mimos</span></button>
         <button onClick={() => setShowCrisexModal(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-primary/50 rounded-full flex items-center justify-center active:scale-90 transition-all"><Coins className="w-5 h-5 text-primary" /></div><span className="text-[10px] text-foreground font-medium">CRISEX</span></button>
       </div>
@@ -296,6 +334,151 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                 <p className="text-[10px] text-center text-muted-foreground mt-2">
                   Você precisa de mais {(selectedProduct.price - balance).toLocaleString()} CRISEX
                 </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Purchase History Modal */}
+      {showHistoryModal && (
+        <div className="absolute inset-0 z-50 flex items-end" onClick={() => { setShowHistoryModal(false); setSelectedPurchased(null); }}>
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-md" />
+          <div 
+            className="relative w-full max-h-[85vh] bg-card rounded-t-3xl overflow-hidden border-t border-border/30 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mt-3" />
+            
+            {/* Header */}
+            <div className="p-4 border-b border-border/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 gradient-primary rounded-full flex items-center justify-center">
+                    <Package className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Minhas Compras</h3>
+                    <p className="text-xs text-muted-foreground">{purchasedItems.length} itens adquiridos</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { setShowHistoryModal(false); setSelectedPurchased(null); }} 
+                  className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center"
+                >
+                  <X className="w-4 h-4 text-foreground" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {purchasedItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4">
+                    <ShoppingBag className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h4 className="text-base font-semibold text-foreground mb-1">Nenhuma compra ainda</h4>
+                  <p className="text-sm text-muted-foreground max-w-[200px]">
+                    Compre packs e vídeos exclusivos durante as lives!
+                  </p>
+                </div>
+              ) : selectedPurchased ? (
+                /* Item Detail View */
+                <div className="animate-fade-in">
+                  <button 
+                    onClick={() => setSelectedPurchased(null)}
+                    className="flex items-center gap-2 text-sm text-muted-foreground mb-4 hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Voltar
+                  </button>
+                  
+                  <div className="rounded-2xl overflow-hidden bg-secondary/50">
+                    <img 
+                      src={selectedPurchased.image} 
+                      alt={selectedPurchased.title} 
+                      className="w-full aspect-[4/5] object-cover"
+                    />
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-0.5 bg-primary/20 text-primary text-[10px] font-bold rounded uppercase">
+                          {selectedPurchased.type === 'pack' ? 'Pack' : 'Vídeo'}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(selectedPurchased.purchasedAt)}
+                        </span>
+                      </div>
+                      <h4 className="text-lg font-bold text-foreground mb-2">{selectedPurchased.title}</h4>
+                      
+                      <div className="flex items-center gap-2 p-3 bg-card rounded-xl mb-3">
+                        <img 
+                          src={selectedPurchased.sellerImage} 
+                          alt={selectedPurchased.seller} 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Vendido por</p>
+                          <p className="text-sm font-semibold text-foreground">{selectedPurchased.seller}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 bg-primary/10 rounded-xl">
+                        <span className="text-xs text-muted-foreground">Valor pago</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm">💎</span>
+                          <span className="text-base font-bold text-primary">{selectedPurchased.price}</span>
+                        </div>
+                      </div>
+                      
+                      <button className="w-full mt-4 py-3 gradient-primary rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                        <Eye className="w-5 h-5 text-primary-foreground" />
+                        <span className="text-sm font-bold text-primary-foreground">Ver Conteúdo</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Items List */
+                <div className="space-y-3">
+                  {purchasedItems.map((item) => (
+                    <button
+                      key={`${item.id}-${item.purchasedAt.getTime()}`}
+                      onClick={() => setSelectedPurchased(item)}
+                      className="w-full flex items-center gap-3 p-3 bg-secondary/50 rounded-xl hover:bg-secondary/80 transition-colors active:scale-[0.98]"
+                    >
+                      <img 
+                        src={item.image} 
+                        alt={item.title} 
+                        className="w-16 h-20 rounded-lg object-cover"
+                      />
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-[8px] font-bold rounded uppercase">
+                            {item.type === 'pack' ? 'Pack' : 'Vídeo'}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground truncate">{item.title}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <img src={item.sellerImage} alt={item.seller} className="w-4 h-4 rounded-full object-cover" />
+                          <span className="text-[10px] text-muted-foreground">{item.seller}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground">{formatDate(item.purchasedAt)}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs">💎</span>
+                          <span className="text-sm font-bold text-primary">{item.price}</span>
+                        </div>
+                        <Eye className="w-4 h-4 text-muted-foreground mt-2 ml-auto" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
