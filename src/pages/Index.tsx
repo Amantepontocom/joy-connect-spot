@@ -123,7 +123,7 @@ const Index = () => {
         {mode === AppMode.LIVE && <LiveView balance={localBalance} setBalance={updateBalance} />}
         {mode === AppMode.CHAT && <ChatView />}
         {mode === AppMode.SHOP && <ShopView balance={localBalance} setBalance={updateBalance} />}
-        {mode === AppMode.PROFILE && <ProfileView balance={localBalance} setBalance={updateBalance} userImages={[]} userPosts={[]} />}
+        {mode === AppMode.PROFILE && <ProfileView balance={localBalance} setBalance={updateBalance} userImages={[]} userPosts={[]} onNavigate={setMode} />}
         {mode === AppMode.MONETIZATION && <MonetizationView balance={localBalance} setBalance={updateBalance} />}
       </main>
 
