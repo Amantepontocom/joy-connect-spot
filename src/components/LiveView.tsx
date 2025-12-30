@@ -316,26 +316,11 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
     <div className="h-full w-full relative overflow-hidden bg-background">
       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-black/40" /></div>
 
-      {/* Discrete Mode Button - Always visible */}
-      <button
-        onClick={toggleDiscreteMode}
-        className={`absolute top-3 right-3 z-[60] w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 ${
-          discreteMode 
-            ? 'bg-primary shadow-glow' 
-            : 'bg-card/60 backdrop-blur-sm border border-border/30'
-        }`}
-      >
-        {discreteMode ? (
-          <EyeOff className="w-5 h-5 text-primary-foreground" />
-        ) : (
-          <Eye className="w-5 h-5 text-foreground" />
-        )}
-      </button>
-
-      {/* Discrete Mode Timer Display */}
+      {/* Discrete Mode Timer Display - Always visible when active */}
       {discreteMode && (
-        <div className="absolute top-14 right-3 z-[60] px-2 py-1 bg-card/80 backdrop-blur-sm rounded-full">
-          <span className="text-[10px] font-medium text-muted-foreground">
+        <div className="absolute top-3 right-3 z-[60] px-3 py-1.5 bg-card/80 backdrop-blur-sm rounded-full flex items-center gap-2">
+          <EyeOff className="w-4 h-4 text-primary" />
+          <span className="text-xs font-medium text-foreground">
             {Math.floor(discreteModeSeconds / 60)}:{(discreteModeSeconds % 60).toString().padStart(2, '0')}
           </span>
         </div>
@@ -504,6 +489,22 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         </button>
         <button onClick={() => setShowMimos(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center active:scale-90 transition-all shadow-glow"><Gift className="w-5 h-5 text-primary-foreground" /></div><span className="text-[10px] text-foreground font-medium">Mimos</span></button>
         <button onClick={() => setShowCrisexModal(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-primary/50 rounded-full flex items-center justify-center active:scale-90 transition-all"><Coins className="w-5 h-5 text-primary" /></div><span className="text-[10px] text-foreground font-medium">CRISEX</span></button>
+        
+        {/* Discrete Mode Button */}
+        <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all ${
+            discreteMode 
+              ? 'bg-primary shadow-glow' 
+              : 'bg-card/50 backdrop-blur-sm border border-border/30'
+          }`}>
+            {discreteMode ? (
+              <EyeOff className="w-5 h-5 text-primary-foreground" />
+            ) : (
+              <Eye className="w-5 h-5 text-foreground" />
+            )}
+          </div>
+          <span className="text-[10px] text-foreground font-medium">Discreto</span>
+        </button>
       </div>
 
       {!isPlaying && (<button onClick={() => { setIsPlaying(true); initAudioContext(); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center shadow-glow animate-pulse-slow"><Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" /></div><p className="text-center text-sm font-semibold text-foreground mt-3 tracking-wide">ENTRAR NA LIVE</p></button>)}
