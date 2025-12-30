@@ -35,69 +35,21 @@ interface Creator {
 
 const CATEGORIES = ['TUDO', 'VÍDEOS', 'PACKS', 'VIP', 'PROMO'];
 
-// Mock featured creators for UI
-const FEATURED_CREATORS: Creator[] = [
-  { id: '1', username: 'maria', display_name: 'Maria', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
-  { id: '2', username: 'julia', display_name: 'Julia', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
-  { id: '3', username: 'ana', display_name: 'Ana', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100' },
-  { id: '4', username: 'bianca', display_name: 'Bianca', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100' },
-  { id: '5', username: 'carla', display_name: 'Carla', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' },
-];
-
-// Mock products for UI
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    title: 'Ensaio Urban Chic',
-    description: '15 fotos exclusivas',
-    price: 450,
-    type: 'pack',
-    badge: 'PACK',
-    image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    creator: { username: 'mariaduarda', display_name: 'Maria Duarda', avatar_url: null }
-  },
-  {
-    id: '2',
-    title: 'Bastidores da Live',
-    description: 'Vídeo de 05:20',
-    price: 300,
-    type: 'video',
-    badge: 'VIDEO',
-    image_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400',
-    creator: { username: 'ana_clara', display_name: 'Ana Clara', avatar_url: null }
-  },
-  {
-    id: '3',
-    title: 'VIP Access 30 Days',
-    description: 'Acesso completo',
-    price: 2500,
-    type: 'vip',
-    badge: 'VIP',
-    image_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400',
-    creator: { username: 'juliasilva', display_name: 'Julia Silva', avatar_url: null }
-  },
-  {
-    id: '4',
-    title: 'Sessão Golden Hour',
-    description: '22 fotos',
-    price: 600,
-    type: 'pack',
-    badge: 'PACK',
-    image_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-    creator: { username: 'bianca_hot', display_name: 'Bianca', avatar_url: null }
-  },
-];
-
 export function ShopView({ balance, setBalance }: ShopViewProps) {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('TUDO');
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [featuredCreators, setFeaturedCreators] = useState<Creator[]>([]);
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch products from database
+  // Fetch products and creators from database
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Fetch products
+      const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
           *,
@@ -106,14 +58,28 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching products:', error);
-      } else if (data && data.length > 0) {
-        setProducts(data);
+      if (productsError) {
+        console.error('Error fetching products:', productsError);
+      } else if (productsData) {
+        setProducts(productsData);
       }
+
+      // Fetch featured creators (profiles with products)
+      const { data: creatorsData, error: creatorsError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .limit(5);
+
+      if (creatorsError) {
+        console.error('Error fetching creators:', creatorsError);
+      } else if (creatorsData) {
+        setFeaturedCreators(creatorsData);
+      }
+
+      setLoading(false);
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
   const filteredProducts = products.filter(product => {
@@ -221,7 +187,7 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
         <div className="px-3 py-2">
           <p className="text-[10px] text-muted-foreground font-medium tracking-wider mb-2">DESTAQUES DA SEMANA</p>
           <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
-            {FEATURED_CREATORS.map((creator) => (
+            {featuredCreators.map((creator) => (
               <button 
                 key={creator.id}
                 onClick={() => setSelectedCreator(selectedCreator === creator.id ? null : creator.id)}
