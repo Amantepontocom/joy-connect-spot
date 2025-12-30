@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Gift, X, Play, Music2, Pickaxe } from 'lucide-react';
-import { REELS, MIMOS } from '@/lib/mockData';
+import { MIMOS } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface ReelsViewProps {
@@ -8,22 +10,121 @@ interface ReelsViewProps {
   setBalance: (updater: (prev: number) => number) => void;
 }
 
+interface Reel {
+  id: string;
+  creator_id: string;
+  video_url: string | null;
+  thumbnail_url: string;
+  description: string | null;
+  audio_name: string | null;
+  likes_count: number;
+  comments_count: number;
+  views_count: number;
+  creator: {
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
 export function ReelsView({ balance, setBalance }: ReelsViewProps) {
+  const { user } = useAuth();
+  const [reels, setReels] = useState<Reel[]>([]);
   const [currentReel, setCurrentReel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
+  const [likedReels, setLikedReels] = useState<Set<string>>(new Set());
   const [isFollowing, setIsFollowing] = useState(false);
   const [showMimos, setShowMimos] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const reel = REELS[currentReel];
+  // Fetch reels from database
+  useEffect(() => {
+    const fetchReels = async () => {
+      const { data, error } = await supabase
+        .from('reels')
+        .select(`
+          *,
+          creator:profiles!reels_creator_id_fkey(username, display_name, avatar_url)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reels:', error);
+      } else if (data) {
+        setReels(data);
+      }
+      setLoading(false);
+    };
+
+    fetchReels();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('reels-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reels' }, () => {
+        fetchReels();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Fetch user's likes
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchLikes = async () => {
+      const { data } = await supabase
+        .from('reels_likes')
+        .select('reel_id')
+        .eq('user_id', user.id);
+
+      if (data) {
+        setLikedReels(new Set(data.map(like => like.reel_id)));
+      }
+    };
+
+    fetchLikes();
+  }, [user]);
+
+  const reel = reels[currentReel];
 
   const handleScroll = (direction: 'up' | 'down') => {
-    if (direction === 'down' && currentReel < REELS.length - 1) { 
+    if (direction === 'down' && currentReel < reels.length - 1) { 
       setCurrentReel(prev => prev + 1); 
-      setIsLiked(false); 
     } else if (direction === 'up' && currentReel > 0) { 
       setCurrentReel(prev => prev - 1); 
-      setIsLiked(false); 
+    }
+  };
+
+  const handleLike = async () => {
+    if (!user || !reel) return;
+
+    const isLiked = likedReels.has(reel.id);
+
+    if (isLiked) {
+      // Unlike
+      await supabase
+        .from('reels_likes')
+        .delete()
+        .eq('reel_id', reel.id)
+        .eq('user_id', user.id);
+
+      setLikedReels(prev => {
+        const next = new Set(prev);
+        next.delete(reel.id);
+        return next;
+      });
+    } else {
+      // Like
+      await supabase
+        .from('reels_likes')
+        .insert({ reel_id: reel.id, user_id: user.id });
+
+      setLikedReels(prev => new Set(prev).add(reel.id));
     }
   };
 
@@ -34,12 +135,35 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-black">
+        <div className="animate-pulse text-white">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (!reel) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-black">
+        <div className="text-white text-center">
+          <p className="text-lg mb-2">Nenhum reel disponível</p>
+          <p className="text-sm text-white/60">Seja o primeiro a criar um!</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isLiked = likedReels.has(reel.id);
+  const creatorName = reel.creator?.display_name || reel.creator?.username || 'Usuário';
+  const creatorAvatar = reel.creator?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+
   return (
     <div className="h-full w-full relative overflow-hidden bg-black">
       {/* Video/Image Background */}
       <div 
         className="absolute inset-0 bg-cover bg-center transition-all duration-500" 
-        style={{ backgroundImage: `url(${reel.thumbnail})` }} 
+        style={{ backgroundImage: `url(${reel.thumbnail_url})` }} 
         onClick={() => setIsPlaying(!isPlaying)}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -62,7 +186,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
       <div className="absolute top-4 left-4 z-30">
         <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full">
           <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
-          <span className="text-white text-sm font-semibold">1256</span>
+          <span className="text-white text-sm font-semibold">{reel.views_count}</span>
         </div>
       </div>
 
@@ -72,8 +196,8 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
         <div className="relative">
           <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500">
             <img 
-              src={reel.authorImage} 
-              alt={reel.author} 
+              src={creatorAvatar} 
+              alt={creatorName} 
               className="w-full h-full rounded-full object-cover border-2 border-black" 
             />
           </div>
@@ -89,21 +213,21 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
 
         {/* Like button */}
         <button 
-          onClick={() => setIsLiked(!isLiked)} 
+          onClick={handleLike} 
           className="flex flex-col items-center gap-1"
         >
           <Heart 
             className={`w-8 h-8 transition-all ${isLiked ? 'text-red-500 fill-red-500' : 'text-white'}`} 
           />
           <span className="text-white text-xs font-semibold">
-            {((reel.likes + (isLiked ? 1 : 0)) / 1000).toFixed(1)}K
+            {(reel.likes_count / 1000).toFixed(1)}K
           </span>
         </button>
 
         {/* Comments button */}
         <button className="flex flex-col items-center gap-1">
           <MessageCircle className="w-8 h-8 text-white" />
-          <span className="text-white text-xs font-semibold">{reel.comments}</span>
+          <span className="text-white text-xs font-semibold">{reel.comments_count}</span>
         </button>
 
         {/* Mimo button */}
@@ -123,11 +247,11 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
         {/* Creator name and follow button */}
         <div className="flex items-center gap-2 mb-2">
           <img 
-            src={reel.authorImage} 
-            alt={reel.author} 
+            src={creatorAvatar} 
+            alt={creatorName} 
             className="w-10 h-10 rounded-full object-cover border-2 border-white/30" 
           />
-          <span className="font-bold text-white text-base">@{reel.author.toLowerCase().replace(' ', '')}</span>
+          <span className="font-bold text-white text-base">@{creatorName.toLowerCase().replace(' ', '')}</span>
           {!isFollowing && (
             <button 
               onClick={() => setIsFollowing(true)} 
@@ -140,7 +264,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
 
         {/* Description */}
         <p className="text-white text-sm leading-relaxed mb-3 line-clamp-2">
-          {reel.description}
+          {reel.description || 'Sem descrição'}
         </p>
 
         {/* Audio info */}
@@ -148,7 +272,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           <Music2 className="w-3.5 h-3.5 text-white" />
           <div className="flex items-center gap-2 overflow-hidden">
             <span className="text-xs text-white/80 truncate">
-              ORIGINAL AUDIO - {reel.author.toUpperCase()}
+              {reel.audio_name || 'ORIGINAL AUDIO'} - {creatorName.toUpperCase()}
             </span>
           </div>
         </div>
