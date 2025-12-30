@@ -648,15 +648,6 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         </div>
       )}
 
-      {/* FAB - Create Live */}
-      {user && (
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="fixed bottom-24 right-4 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-glow z-40"
-        >
-          <Plus className="w-7 h-7 text-primary-foreground" />
-        </button>
-      )}
 
       {/* Create Live Modal */}
       {showCreateModal && (
