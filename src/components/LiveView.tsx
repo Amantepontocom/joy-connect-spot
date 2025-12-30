@@ -183,7 +183,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       </div>
 
       {/* Chat Messages - Left Side Extended - TikTok Live Style */}
-      <div className="absolute left-28 bottom-20 z-20 w-[60%] max-w-[280px] max-h-[28vh] pl-2">
+      <div className="absolute left-0 bottom-20 z-10 w-[85%] max-w-[340px] max-h-[22vh] pl-3">
         <div 
           ref={messagesContainerRef} 
           className="flex flex-col gap-2.5 justify-end overflow-y-auto hide-scrollbar scroll-smooth"
