@@ -559,8 +559,11 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
 
       {/* Right side actions */}
       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-5 z-30">
-        {/* Profile avatar */}
-        <div className="relative">
+        {/* Profile avatar with follow button */}
+        <button 
+          onClick={() => !isFollowing && setIsFollowing(true)}
+          className="relative flex flex-col items-center"
+        >
           <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500">
             <img 
               src={creatorAvatar} 
@@ -568,7 +571,13 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
               className="w-full h-full rounded-full object-cover border-2 border-black" 
             />
           </div>
-        </div>
+          {/* Follow badge */}
+          {!isFollowing && (
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-2 border-black">
+              <Plus className="w-3.5 h-3.5 text-white" />
+            </div>
+          )}
+        </button>
 
         {/* Mining button */}
         <button className="flex flex-col items-center gap-1">
@@ -615,19 +624,11 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
       {/* Bottom left - Creator info */}
       <div className="absolute bottom-4 left-4 right-20 z-20">
         <div className="flex items-center gap-2 mb-2">
-          <img 
-            src={creatorAvatar} 
-            alt={creatorName} 
-            className="w-10 h-10 rounded-full object-cover border-2 border-white/30" 
-          />
           <span className="font-bold text-white text-base">@{creatorName.toLowerCase().replace(' ', '')}</span>
-          {!isFollowing && (
-            <button 
-              onClick={() => setIsFollowing(true)} 
-              className="px-3 py-1 bg-primary rounded-md text-xs font-bold text-white"
-            >
-              SEGUIR
-            </button>
+          {isFollowing && (
+            <span className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-medium text-white/80">
+              Seguindo
+            </span>
           )}
         </div>
 
