@@ -32,10 +32,13 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
   }, [selectedCategory]);
 
   return (
-    <div className={cn("w-full py-2 px-2", className)}>
+    <div className={cn("w-full", className)}>
+      {/* Gradient shadow from top */}
+      <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none z-40" />
+      
       <div 
         ref={containerRef}
-        className="flex items-center gap-1 overflow-x-auto hide-scrollbar bg-black/40 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg"
+        className="relative z-50 flex items-center gap-2 overflow-x-auto hide-scrollbar px-3 py-3"
       >
         {CATEGORIES.map((category) => {
           const isSelected = selectedCategory === category.id;
@@ -45,10 +48,10 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
               ref={isSelected ? selectedRef : null}
               onClick={() => onCategoryChange(category.id)}
               className={cn(
-                "flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all duration-200 whitespace-nowrap",
+                "flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all duration-200 whitespace-nowrap",
                 isSelected
-                  ? "bg-primary/20 border border-primary text-primary shadow-[0_0_10px_rgba(236,72,153,0.3)]"
-                  : "bg-transparent border border-transparent text-white/70 hover:text-white"
+                  ? "bg-white/10 border border-primary text-primary"
+                  : "bg-white/5 border border-white/20 text-white/80 hover:text-white hover:bg-white/10"
               )}
             >
               {category.label}
