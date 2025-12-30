@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, Gift, X, Play, Music2, Pickaxe, Send, Plus, Upload, Video, Image } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Heart, MessageCircle, Gift, X, Play, Music2, Pickaxe, Send, Plus, Upload, Video, Image, Eye, EyeOff } from 'lucide-react';
 import { MIMOS } from '@/lib/mockData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +7,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
 import { CategoryFilter, CategorySelector, CategoryId, CATEGORIES } from '@/components/CategoryFilter';
 import crisexToken from '@/assets/crisex-token.png';
+
+const DISCRETE_MODE_COST_PER_MINUTE = 10;
+const CREATOR_SHARE_PERCENT = 70;
 
 interface ReelsViewProps {
   balance: number;
@@ -72,6 +75,11 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
+  // Discrete Mode states
+  const [discreteMode, setDiscreteMode] = useState(false);
+  const [discreteModeTimer, setDiscreteModeTimer] = useState<NodeJS.Timeout | null>(null);
+  const [discreteModeSeconds, setDiscreteModeSeconds] = useState(0);
+
   // Video playback control
   useEffect(() => {
     if (videoRef.current) {
@@ -82,6 +90,97 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
       }
     }
   }, [isPlaying, currentReel]);
+
+  // Discrete Mode - charge every minute
+  const reel = reels[currentReel];
+  
+  const chargeDiscreteMode = useCallback(async () => {
+    if (balance < DISCRETE_MODE_COST_PER_MINUTE) {
+      setDiscreteMode(false);
+      if (discreteModeTimer) {
+        clearInterval(discreteModeTimer);
+        setDiscreteModeTimer(null);
+      }
+      toast({
+        title: "Saldo insuficiente",
+        description: "Modo Discreto desativado por falta de CRISEX.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setBalance(prev => prev - DISCRETE_MODE_COST_PER_MINUTE);
+
+    const creatorShare = Math.floor(DISCRETE_MODE_COST_PER_MINUTE * CREATOR_SHARE_PERCENT / 100);
+    const platformShare = DISCRETE_MODE_COST_PER_MINUTE - creatorShare;
+
+    if (user && reel) {
+      try {
+        await supabase.from('discrete_mode_transactions').insert({
+          user_id: user.id,
+          creator_id: reel.creator_id,
+          reel_id: reel.id,
+          amount: DISCRETE_MODE_COST_PER_MINUTE,
+          creator_share: creatorShare,
+          platform_share: platformShare,
+        });
+      } catch (error) {
+        console.error('Error recording discrete mode transaction:', error);
+      }
+    }
+  }, [balance, user, reel, discreteModeTimer, setBalance]);
+
+  const toggleDiscreteMode = useCallback(() => {
+    if (!discreteMode) {
+      if (balance < DISCRETE_MODE_COST_PER_MINUTE) {
+        toast({
+          title: "Saldo insuficiente",
+          description: `Você precisa de pelo menos ${DISCRETE_MODE_COST_PER_MINUTE} CRISEX para ativar o Modo Discreto.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDiscreteMode(true);
+      setDiscreteModeSeconds(0);
+      
+      const timer = setInterval(() => {
+        setDiscreteModeSeconds(prev => prev + 1);
+      }, 1000);
+      setDiscreteModeTimer(timer);
+
+      toast({
+        title: "Modo Discreto ativado",
+        description: "Cobrança de 10 CRISEX por minuto.",
+      });
+    } else {
+      setDiscreteMode(false);
+      if (discreteModeTimer) {
+        clearInterval(discreteModeTimer);
+        setDiscreteModeTimer(null);
+      }
+      setDiscreteModeSeconds(0);
+
+      toast({
+        title: "Modo Discreto desativado",
+        description: "Interface restaurada.",
+      });
+    }
+  }, [discreteMode, discreteModeTimer, balance]);
+
+  useEffect(() => {
+    if (discreteMode && discreteModeSeconds > 0 && discreteModeSeconds % 60 === 0) {
+      chargeDiscreteMode();
+    }
+  }, [discreteModeSeconds, discreteMode, chargeDiscreteMode]);
+
+  useEffect(() => {
+    return () => {
+      if (discreteModeTimer) {
+        clearInterval(discreteModeTimer);
+      }
+    };
+  }, [discreteModeTimer]);
 
   // Fetch reels from database filtered by category
   useEffect(() => {
@@ -203,7 +302,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [comments]);
 
-  const reel = reels[currentReel];
+  // reel is already defined above for discrete mode
 
   const handleScroll = (direction: 'up' | 'down') => {
     if (direction === 'down' && currentReel < reels.length - 1) { 
@@ -535,26 +634,39 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
 
-      {/* Category Filter Header - Fixed at very top */}
-      <div className="absolute top-0 left-0 right-0 z-50 safe-area-top">
-        <CategoryFilter 
-          selectedCategory={selectedCategory} 
-          onCategoryChange={setSelectedCategory}
-        />
-      </div>
-
-      {/* Touch zones for navigation */}
-      <div className="absolute top-0 bottom-24 left-0 w-1/3 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('up'); }} />
-      <div className="absolute top-0 bottom-24 right-0 w-1/3 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('down'); }} />
-
-      {/* Play/Pause indicator */}
-      {!isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <div className="w-20 h-20 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center animate-scale-in">
-            <Play className="w-10 h-10 text-white ml-1" />
-          </div>
+      {/* Discrete Mode Timer Display - Always visible when active */}
+      {discreteMode && (
+        <div className="absolute top-3 right-3 z-[60] px-3 py-1.5 bg-card/80 backdrop-blur-sm rounded-full flex items-center gap-2">
+          <EyeOff className="w-4 h-4 text-primary" />
+          <span className="text-xs font-medium text-foreground">
+            {Math.floor(discreteModeSeconds / 60)}:{(discreteModeSeconds % 60).toString().padStart(2, '0')}
+          </span>
         </div>
       )}
+
+      {/* All UI hidden when discrete mode is active */}
+      {!discreteMode && (
+        <>
+          {/* Category Filter Header - Fixed at very top */}
+          <div className="absolute top-0 left-0 right-0 z-50 safe-area-top">
+            <CategoryFilter 
+              selectedCategory={selectedCategory} 
+              onCategoryChange={setSelectedCategory}
+            />
+          </div>
+
+          {/* Touch zones for navigation */}
+          <div className="absolute top-0 bottom-24 left-0 w-1/3 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('up'); }} />
+          <div className="absolute top-0 bottom-24 right-0 w-1/3 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('down'); }} />
+
+          {/* Play/Pause indicator */}
+          {!isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <div className="w-20 h-20 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center animate-scale-in">
+                <Play className="w-10 h-10 text-white ml-1" />
+              </div>
+            </div>
+          )}
 
 
       {/* Right side actions */}
@@ -619,6 +731,22 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           </div>
           <span className="text-[10px] text-white font-semibold">MIMO</span>
         </button>
+
+        {/* Discrete Mode Button */}
+        <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+            discreteMode 
+              ? 'bg-primary shadow-glow' 
+              : 'bg-white/10 backdrop-blur-sm border border-white/20'
+          }`}>
+            {discreteMode ? (
+              <EyeOff className="w-5 h-5 text-white" />
+            ) : (
+              <Eye className="w-5 h-5 text-white" />
+            )}
+          </div>
+          <span className="text-[10px] text-white font-semibold">DISCRETO</span>
+        </button>
       </div>
 
       {/* Bottom left - Creator info */}
@@ -643,6 +771,8 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           </span>
         </div>
       </div>
+      </>
+      )}
 
       {/* Comments Modal */}
       {showComments && (
