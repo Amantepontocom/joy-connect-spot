@@ -384,22 +384,21 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-black">
-      {/* Category Filter Header */}
-      <div className="absolute top-0 left-0 right-0 z-40">
-        <CategoryFilter 
-          selectedCategory={selectedCategory} 
-          onCategoryChange={setSelectedCategory}
-          className="bg-black/80"
-        />
-      </div>
-
       {/* Video/Image Background */}
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-all duration-500 pt-14" 
+        className="absolute inset-0 bg-cover bg-center transition-all duration-500" 
         style={{ backgroundImage: `url(${reel.thumbnail_url})` }} 
         onClick={() => setIsPlaying(!isPlaying)}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
+      </div>
+
+      {/* Category Filter Header - Fixed at very top */}
+      <div className="absolute top-0 left-0 right-0 z-50 safe-area-top">
+        <CategoryFilter 
+          selectedCategory={selectedCategory} 
+          onCategoryChange={setSelectedCategory}
+        />
       </div>
 
       {/* Touch zones for navigation */}
