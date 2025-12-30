@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, Gift, X, Play, Music2, Pickaxe, Send } from 'lucide-react';
+import { Heart, MessageCircle, Gift, X, Play, Music2, Pickaxe, Send, Plus, Upload, Video, Image } from 'lucide-react';
 import { MIMOS } from '@/lib/mockData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/hooks/use-toast';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface ReelsViewProps {
@@ -53,6 +54,16 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const [loadingComments, setLoadingComments] = useState(false);
   const [loading, setLoading] = useState(true);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  
+  // Create reel states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newReel, setNewReel] = useState({ description: '', audio_name: '' });
+  const [reelThumbnail, setReelThumbnail] = useState<File | null>(null);
+  const [reelVideo, setReelVideo] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch reels from database
   useEffect(() => {
@@ -246,6 +257,88 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
     return `${diffDays}d`;
   };
 
+  const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReelThumbnail(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setThumbnailPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReelVideo(file);
+    }
+  };
+
+  const handleCreateReel = async () => {
+    if (!user || !reelThumbnail) {
+      toast({ title: "Erro", description: "Adicione uma thumbnail para o reel.", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Upload thumbnail
+      const thumbnailExt = reelThumbnail.name.split('.').pop();
+      const thumbnailPath = `${user.id}/${Date.now()}-thumb.${thumbnailExt}`;
+      const { error: thumbError } = await supabase.storage
+        .from('reel-media')
+        .upload(thumbnailPath, reelThumbnail);
+
+      if (thumbError) throw thumbError;
+
+      const { data: { publicUrl: thumbnailUrl } } = supabase.storage
+        .from('reel-media')
+        .getPublicUrl(thumbnailPath);
+
+      // Upload video if provided
+      let videoUrl = null;
+      if (reelVideo) {
+        const videoExt = reelVideo.name.split('.').pop();
+        const videoPath = `${user.id}/${Date.now()}-video.${videoExt}`;
+        const { error: videoError } = await supabase.storage
+          .from('reel-media')
+          .upload(videoPath, reelVideo);
+
+        if (videoError) throw videoError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('reel-media')
+          .getPublicUrl(videoPath);
+        videoUrl = publicUrl;
+      }
+
+      // Insert reel
+      const { error: insertError } = await supabase
+        .from('reels')
+        .insert({
+          creator_id: user.id,
+          thumbnail_url: thumbnailUrl,
+          video_url: videoUrl,
+          description: newReel.description || null,
+          audio_name: newReel.audio_name || null,
+        });
+
+      if (insertError) throw insertError;
+
+      toast({ title: "Sucesso!", description: "Seu reel foi publicado." });
+      setShowCreateModal(false);
+      setNewReel({ description: '', audio_name: '' });
+      setReelThumbnail(null);
+      setReelVideo(null);
+      setThumbnailPreview('');
+    } catch (error) {
+      console.error('Error creating reel:', error);
+      toast({ title: "Erro", description: "Não foi possível publicar o reel.", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-black">
@@ -261,6 +354,15 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           <p className="text-lg mb-2">Nenhum reel disponível</p>
           <p className="text-sm text-white/60">Seja o primeiro a criar um!</p>
         </div>
+        {/* FAB for empty state */}
+        {user && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="fixed bottom-24 right-4 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-glow z-40"
+          >
+            <Plus className="w-7 h-7 text-primary-foreground" />
+          </button>
+        )}
       </div>
     );
   }
@@ -506,6 +608,112 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
               className="absolute top-4 right-4 w-8 h-8 bg-secondary rounded-full flex items-center justify-center"
             >
               <X className="w-4 h-4 text-foreground" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* FAB - Create Reel */}
+      {user && (
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="fixed bottom-24 right-4 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-glow z-40"
+        >
+          <Plus className="w-7 h-7 text-primary-foreground" />
+        </button>
+      )}
+
+      {/* Create Reel Modal */}
+      {showCreateModal && (
+        <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowCreateModal(false)}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          <div 
+            className="relative w-full max-h-[85vh] bg-card rounded-t-3xl p-6 animate-slide-up overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
+            
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-foreground">Novo Reel</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-foreground" />
+              </button>
+            </div>
+
+            {/* Thumbnail Upload */}
+            <div 
+              onClick={() => thumbnailInputRef.current?.click()}
+              className="relative aspect-[9/16] w-full max-w-[200px] mx-auto mb-4 bg-secondary rounded-xl overflow-hidden cursor-pointer border-2 border-dashed border-border hover:border-primary transition-colors"
+            >
+              {thumbnailPreview ? (
+                <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <Image className="w-8 h-8 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Thumbnail *</span>
+                </div>
+              )}
+            </div>
+            <input
+              ref={thumbnailInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailSelect}
+              className="hidden"
+            />
+
+            {/* Video Upload */}
+            <button
+              onClick={() => videoInputRef.current?.click()}
+              className="w-full p-3 mb-4 bg-secondary rounded-xl flex items-center justify-center gap-2 border border-dashed border-border hover:border-primary transition-colors"
+            >
+              <Video className="w-5 h-5 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {reelVideo ? reelVideo.name : 'Adicionar vídeo (opcional)'}
+              </span>
+            </button>
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleVideoSelect}
+              className="hidden"
+            />
+
+            {/* Description */}
+            <textarea
+              value={newReel.description}
+              onChange={(e) => setNewReel({ ...newReel, description: e.target.value })}
+              placeholder="Descrição do reel..."
+              className="w-full p-3 mb-4 bg-secondary rounded-xl text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-24"
+            />
+
+            {/* Audio Name */}
+            <input
+              type="text"
+              value={newReel.audio_name}
+              onChange={(e) => setNewReel({ ...newReel, audio_name: e.target.value })}
+              placeholder="Nome do áudio (opcional)"
+              className="w-full p-3 mb-6 bg-secondary rounded-xl text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+
+            {/* Submit Button */}
+            <button
+              onClick={handleCreateReel}
+              disabled={uploading || !reelThumbnail}
+              className="w-full py-3 gradient-primary rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {uploading ? (
+                <span className="text-sm font-bold text-primary-foreground">Publicando...</span>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5 text-primary-foreground" />
+                  <span className="text-sm font-bold text-primary-foreground">Publicar Reel</span>
+                </>
+              )}
             </button>
           </div>
         </div>
