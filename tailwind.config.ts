@@ -111,6 +111,14 @@ export default {
           from: { transform: "rotate(0deg)" },
           to: { transform: "rotate(360deg)" },
         },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { boxShadow: "0 0 8px hsl(var(--primary) / 0.6)" },
+          "50%": { boxShadow: "0 0 20px hsl(var(--primary) / 0.9)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -121,6 +129,8 @@ export default {
         "slide-up": "slide-up 0.4s ease-out",
         "slide-down": "slide-down 0.4s ease-out",
         spin: "spin 1s linear infinite",
+        shimmer: "shimmer 2s linear infinite",
+        "pulse-glow": "pulse-glow 1.5s ease-in-out infinite",
       },
     },
   },
