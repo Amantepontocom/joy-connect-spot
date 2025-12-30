@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, Coins } from 'lucide-react';
+import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, Coins, Plus, Upload, Camera, Video as VideoIcon } from 'lucide-react';
 import { LIVE_STREAMS, MIMOS } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
 import { playMimoSound, initAudioContext } from '@/lib/mimoSounds';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface LiveViewProps {
@@ -38,6 +40,7 @@ const LIVE_PRODUCTS: ProductItem[] = [
 ];
 
 export function LiveView({ balance, setBalance }: LiveViewProps) {
+  const { user } = useAuth();
   const [showMimos, setShowMimos] = useState(false);
   const [showCrisexModal, setShowCrisexModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
@@ -53,6 +56,14 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
   const [floatingMessages, setFloatingMessages] = useState<ChatMessage[]>([]);
   const [chatMessage, setChatMessage] = useState('');
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Create live states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newLive, setNewLive] = useState({ title: '', meta_goal: 5000 });
+  const [liveThumbnail, setLiveThumbnail] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [creating, setCreating] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const currentStream = LIVE_STREAMS[0];
   const metaGoal = 5000;
@@ -113,6 +124,66 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         description: "Você não tem CRISEX suficiente para esta compra.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLiveThumbnail(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setThumbnailPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateLive = async () => {
+    if (!user || !newLive.title.trim()) {
+      toast({ title: "Erro", description: "Adicione um título para a live.", variant: "destructive" });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      let thumbnailUrl = null;
+      
+      if (liveThumbnail) {
+        const ext = liveThumbnail.name.split('.').pop();
+        const path = `${user.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('live-thumbnails')
+          .upload(path, liveThumbnail);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('live-thumbnails')
+          .getPublicUrl(path);
+        thumbnailUrl = publicUrl;
+      }
+
+      const { error: insertError } = await supabase
+        .from('lives')
+        .insert({
+          streamer_id: user.id,
+          title: newLive.title,
+          thumbnail_url: thumbnailUrl,
+          meta_goal: newLive.meta_goal,
+          is_active: true,
+        });
+
+      if (insertError) throw insertError;
+
+      toast({ title: "Live iniciada!", description: "Sua live está ao vivo agora." });
+      setShowCreateModal(false);
+      setNewLive({ title: '', meta_goal: 5000 });
+      setLiveThumbnail(null);
+      setThumbnailPreview('');
+    } catch (error) {
+      console.error('Error creating live:', error);
+      toast({ title: "Erro", description: "Não foi possível iniciar a live.", variant: "destructive" });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -537,6 +608,100 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FAB - Create Live */}
+      {user && (
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="fixed bottom-24 right-4 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-glow z-40"
+        >
+          <Plus className="w-7 h-7 text-primary-foreground" />
+        </button>
+      )}
+
+      {/* Create Live Modal */}
+      {showCreateModal && (
+        <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowCreateModal(false)}>
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+          <div 
+            className="relative w-full max-h-[85vh] bg-card rounded-t-3xl p-6 animate-slide-up overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
+            
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-foreground">Iniciar Live</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-foreground" />
+              </button>
+            </div>
+
+            {/* Thumbnail Upload */}
+            <div 
+              onClick={() => thumbnailInputRef.current?.click()}
+              className="relative aspect-video w-full mb-4 bg-secondary rounded-xl overflow-hidden cursor-pointer border-2 border-dashed border-border hover:border-primary transition-colors"
+            >
+              {thumbnailPreview ? (
+                <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <Camera className="w-8 h-8 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Thumbnail da Live (opcional)</span>
+                </div>
+              )}
+            </div>
+            <input
+              ref={thumbnailInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailSelect}
+              className="hidden"
+            />
+
+            {/* Title */}
+            <input
+              type="text"
+              value={newLive.title}
+              onChange={(e) => setNewLive({ ...newLive, title: e.target.value })}
+              placeholder="Título da live *"
+              className="w-full p-3 mb-4 bg-secondary rounded-xl text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+
+            {/* Meta Goal */}
+            <div className="mb-6">
+              <label className="text-xs text-muted-foreground mb-2 block">Meta de CRISEX</label>
+              <div className="flex items-center gap-2 p-3 bg-secondary rounded-xl">
+                <img src={crisexToken} alt="CRISEX" className="w-5 h-5" />
+                <input
+                  type="number"
+                  value={newLive.meta_goal}
+                  onChange={(e) => setNewLive({ ...newLive, meta_goal: parseInt(e.target.value) || 0 })}
+                  className="flex-1 bg-transparent text-sm text-foreground border-none focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleCreateLive}
+              disabled={creating || !newLive.title.trim()}
+              className="w-full py-3 gradient-primary rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {creating ? (
+                <span className="text-sm font-bold text-primary-foreground">Iniciando...</span>
+              ) : (
+                <>
+                  <VideoIcon className="w-5 h-5 text-primary-foreground" />
+                  <span className="text-sm font-bold text-primary-foreground">Iniciar Live</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
