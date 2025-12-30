@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
+import { CategoryFilter, CategorySelector, CategoryId, CATEGORIES } from '@/components/CategoryFilter';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface ReelsViewProps {
@@ -22,6 +23,7 @@ interface Reel {
   likes_count: number;
   comments_count: number;
   views_count: number;
+  categories: string[] | null;
   creator: {
     username: string | null;
     display_name: string | null;
@@ -55,9 +57,13 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const [loading, setLoading] = useState(true);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   
+  // Category filter
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('mulheres');
+  
   // Create reel states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newReel, setNewReel] = useState({ description: '', audio_name: '' });
+  const [newReelCategories, setNewReelCategories] = useState<CategoryId[]>([]);
   const [reelThumbnail, setReelThumbnail] = useState<File | null>(null);
   const [reelVideo, setReelVideo] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
@@ -65,9 +71,10 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch reels from database
+  // Fetch reels from database filtered by category
   useEffect(() => {
     const fetchReels = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from('reels')
         .select(`
@@ -75,12 +82,14 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           creator:profiles!reels_creator_id_fkey(username, display_name, avatar_url)
         `)
         .eq('is_active', true)
+        .contains('categories', [selectedCategory])
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching reels:', error);
       } else if (data) {
         setReels(data);
+        setCurrentReel(0);
       }
       setLoading(false);
     };
@@ -98,7 +107,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [selectedCategory]);
 
   // Fetch user's likes
   useEffect(() => {
@@ -321,6 +330,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           video_url: videoUrl,
           description: newReel.description || null,
           audio_name: newReel.audio_name || null,
+          categories: newReelCategories,
         });
 
       if (insertError) throw insertError;
@@ -328,6 +338,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
       toast({ title: "Sucesso!", description: "Seu reel foi publicado." });
       setShowCreateModal(false);
       setNewReel({ description: '', audio_name: '' });
+      setNewReelCategories([]);
       setReelThumbnail(null);
       setReelVideo(null);
       setThumbnailPreview('');
@@ -373,9 +384,18 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-black">
+      {/* Category Filter Header */}
+      <div className="absolute top-0 left-0 right-0 z-40">
+        <CategoryFilter 
+          selectedCategory={selectedCategory} 
+          onCategoryChange={setSelectedCategory}
+          className="bg-black/80"
+        />
+      </div>
+
       {/* Video/Image Background */}
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-all duration-500" 
+        className="absolute inset-0 bg-cover bg-center transition-all duration-500 pt-14" 
         style={{ backgroundImage: `url(${reel.thumbnail_url})` }} 
         onClick={() => setIsPlaying(!isPlaying)}
       >
@@ -684,6 +704,13 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
               className="w-full p-3 mb-4 bg-secondary rounded-xl text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-24"
             />
 
+            {/* Categories */}
+            <CategorySelector 
+              selectedCategories={newReelCategories}
+              onCategoriesChange={setNewReelCategories}
+              className="mb-4"
+            />
+
             {/* Audio Name */}
             <input
               type="text"
@@ -696,7 +723,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
             {/* Submit Button */}
             <button
               onClick={handleCreateReel}
-              disabled={uploading || !reelThumbnail}
+              disabled={uploading || !reelThumbnail || newReelCategories.length === 0}
               className="w-full py-3 gradient-primary rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {uploading ? (

@@ -96,6 +96,7 @@ export type Database = {
       }
       lives: {
         Row: {
+          categories: string[] | null
           created_at: string
           ended_at: string | null
           id: string
@@ -108,6 +109,7 @@ export type Database = {
           viewers_count: number | null
         }
         Insert: {
+          categories?: string[] | null
           created_at?: string
           ended_at?: string | null
           id?: string
@@ -120,6 +122,7 @@ export type Database = {
           viewers_count?: number | null
         }
         Update: {
+          categories?: string[] | null
           created_at?: string
           ended_at?: string | null
           id?: string
@@ -234,6 +237,7 @@ export type Database = {
       products: {
         Row: {
           badge: string | null
+          categories: string[] | null
           created_at: string
           creator_id: string
           description: string | null
@@ -246,6 +250,7 @@ export type Database = {
         }
         Insert: {
           badge?: string | null
+          categories?: string[] | null
           created_at?: string
           creator_id: string
           description?: string | null
@@ -258,6 +263,7 @@ export type Database = {
         }
         Update: {
           badge?: string | null
+          categories?: string[] | null
           created_at?: string
           creator_id?: string
           description?: string | null
@@ -369,6 +375,7 @@ export type Database = {
       reels: {
         Row: {
           audio_name: string | null
+          categories: string[] | null
           comments_count: number | null
           created_at: string
           creator_id: string
@@ -383,6 +390,7 @@ export type Database = {
         }
         Insert: {
           audio_name?: string | null
+          categories?: string[] | null
           comments_count?: number | null
           created_at?: string
           creator_id: string
@@ -397,6 +405,7 @@ export type Database = {
         }
         Update: {
           audio_name?: string | null
+          categories?: string[] | null
           comments_count?: number | null
           created_at?: string
           creator_id?: string

@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { playMimoSound, initAudioContext } from '@/lib/mimoSounds';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { CategoryFilter, CategorySelector, CategoryId } from '@/components/CategoryFilter';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface LiveViewProps {
@@ -57,9 +58,13 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
   const [chatMessage, setChatMessage] = useState('');
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  // Category filter
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('mulheres');
+
   // Create live states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newLive, setNewLive] = useState({ title: '', meta_goal: 5000 });
+  const [newLiveCategories, setNewLiveCategories] = useState<CategoryId[]>([]);
   const [liveThumbnail, setLiveThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   const [creating, setCreating] = useState(false);
@@ -170,6 +175,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
           thumbnail_url: thumbnailUrl,
           meta_goal: newLive.meta_goal,
           is_active: true,
+          categories: newLiveCategories,
         });
 
       if (insertError) throw insertError;
@@ -177,6 +183,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       toast({ title: "Live iniciada!", description: "Sua live está ao vivo agora." });
       setShowCreateModal(false);
       setNewLive({ title: '', meta_goal: 5000 });
+      setNewLiveCategories([]);
       setLiveThumbnail(null);
       setThumbnailPreview('');
     } catch (error) {
@@ -200,7 +207,15 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-background">
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-background/60" /></div>
+      {/* Category Filter Header */}
+      <div className="absolute top-0 left-0 right-0 z-50">
+        <CategoryFilter 
+          selectedCategory={selectedCategory} 
+          onCategoryChange={setSelectedCategory}
+        />
+      </div>
+
+      <div className="absolute inset-0 bg-cover bg-center pt-14" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-background/60" /></div>
 
       <div className="absolute top-0 left-0 right-0 z-30 p-4 pt-2">
         <div className="flex items-center justify-between mb-3">
@@ -673,6 +688,13 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
               className="w-full p-3 mb-4 bg-secondary rounded-xl text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
 
+            {/* Categories */}
+            <CategorySelector 
+              selectedCategories={newLiveCategories}
+              onCategoriesChange={setNewLiveCategories}
+              className="mb-4"
+            />
+
             {/* Meta Goal */}
             <div className="mb-6">
               <label className="text-xs text-muted-foreground mb-2 block">Meta de CRISEX</label>
@@ -690,7 +712,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
             {/* Submit Button */}
             <button
               onClick={handleCreateLive}
-              disabled={creating || !newLive.title.trim()}
+              disabled={creating || !newLive.title.trim() || newLiveCategories.length === 0}
               className="w-full py-3 gradient-primary rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {creating ? (
