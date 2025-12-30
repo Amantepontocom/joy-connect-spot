@@ -56,6 +56,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const [loadingComments, setLoadingComments] = useState(false);
   const [loading, setLoading] = useState(true);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   // Category filter
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('mulheres');
@@ -70,6 +71,17 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const [uploading, setUploading] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Video playback control
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isPlaying, currentReel]);
 
   // Fetch reels from database filtered by category
   useEffect(() => {
@@ -500,13 +512,28 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   return (
     <div className="h-full w-full relative overflow-hidden bg-black">
       {/* Video/Image Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center transition-all duration-500" 
-        style={{ backgroundImage: `url(${reel.thumbnail_url})` }} 
-        onClick={() => setIsPlaying(!isPlaying)}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
-      </div>
+      {reel.video_url ? (
+        <video
+          ref={videoRef}
+          src={reel.video_url}
+          poster={reel.thumbnail_url}
+          className="absolute inset-0 w-full h-full object-cover"
+          loop
+          muted
+          playsInline
+          autoPlay
+          onClick={() => setIsPlaying(!isPlaying)}
+        />
+      ) : (
+        <div 
+          className="absolute inset-0 bg-cover bg-center" 
+          style={{ backgroundImage: `url(${reel.thumbnail_url})` }} 
+          onClick={() => setIsPlaying(!isPlaying)}
+        />
+      )}
+      
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
 
       {/* Category Filter Header - Fixed at very top */}
       <div className="absolute top-0 left-0 right-0 z-50 safe-area-top">
