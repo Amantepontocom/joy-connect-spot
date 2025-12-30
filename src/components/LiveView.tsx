@@ -251,7 +251,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       </div>
 
       {/* Product Cards - Left Side */}
-      <div className="absolute left-2 top-[120px] z-20 flex flex-col gap-3">
+      <div className="absolute left-2 top-[130px] z-20 flex flex-col gap-3">
         {LIVE_PRODUCTS.map((product) => (
           <button
             key={product.id}
