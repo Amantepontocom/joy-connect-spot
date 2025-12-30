@@ -180,19 +180,27 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         ))}
       </div>
 
-      {/* Chat Messages - Below Product Cards */}
-      <div className="absolute left-2 bottom-16 z-20 w-36">
-        <div ref={messagesContainerRef} className="flex flex-col gap-1 overflow-hidden">
-          {floatingMessages.slice(-3).map((msg, index) => (
-            <div key={msg.id} className="flex items-center gap-1.5" style={{ opacity: 1 - (2 - index) * 0.25 }}>
-              <img src={msg.avatar} alt={msg.username} className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-              <div className={`rounded-full px-2 py-1 backdrop-blur-md flex items-center gap-1 ${msg.hasMimo || msg.crisexAmount ? 'bg-primary/30' : 'bg-card/50'}`}>
-                <span className={`text-[9px] font-semibold truncate max-w-[40px] ${msg.isVip ? 'text-primary' : 'text-foreground'}`}>{msg.username}</span>
-                {msg.mimoIcon && <span className="text-xs">{msg.mimoIcon}</span>}
-                <span className={`text-[9px] truncate max-w-[50px] ${msg.crisexAmount ? 'text-primary' : 'text-foreground/80'}`}>{msg.message}</span>
+      {/* Chat Messages - Extended Area */}
+      <div className="absolute left-24 right-20 bottom-16 z-20 max-h-[35vh] overflow-hidden pointer-events-none">
+        <div ref={messagesContainerRef} className="flex flex-col gap-1.5 justify-end h-full">
+          {floatingMessages.slice(-8).map((msg, index) => {
+            const totalMsgs = Math.min(floatingMessages.length, 8);
+            const opacity = 0.4 + (index / totalMsgs) * 0.6;
+            return (
+              <div 
+                key={msg.id} 
+                className="flex items-center gap-2 animate-fade-in" 
+                style={{ opacity }}
+              >
+                <img src={msg.avatar} alt={msg.username} className="w-6 h-6 rounded-full object-cover flex-shrink-0 ring-1 ring-border/30" />
+                <div className={`rounded-full px-3 py-1.5 backdrop-blur-md flex items-center gap-1.5 ${msg.hasMimo || msg.crisexAmount ? 'bg-primary/40' : 'bg-card/60'}`}>
+                  <span className={`text-[10px] font-semibold ${msg.isVip ? 'text-primary' : 'text-foreground'}`}>{msg.username}</span>
+                  {msg.mimoIcon && <span className="text-sm">{msg.mimoIcon}</span>}
+                  <span className={`text-[10px] ${msg.crisexAmount ? 'text-primary font-semibold' : 'text-foreground/90'}`}>{msg.message}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
