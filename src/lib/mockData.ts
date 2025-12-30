@@ -1,11 +1,11 @@
 import { MimoType, StoryItem, UserPost, LiveStream, ChatConversation, ShopItem, ReelItem } from './types';
 
 export const MIMOS: MimoType[] = [
-  { id: 'm1', name: 'Curtida Premium', icon: '❤️', price: 10, color: 'text-red-500', animation: 'animate-ping' },
-  { id: 'm2', name: 'Destaque', icon: '🌟', price: 50, color: 'text-yellow-400', animation: 'animate-bounce' },
-  { id: 'm3', name: 'Presente', icon: '🎁', price: 100, color: 'text-purple-500', animation: 'animate-pulse' },
-  { id: 'm4', name: 'Super Mimo', icon: '🔥', price: 500, color: 'text-orange-500', animation: 'animate-pulse' },
-  { id: 'm5', name: 'Mimo VIP', icon: '👑', price: 1000, color: 'text-gold', animation: 'animate-bounce' },
+  { id: 'm1', name: 'Rosa Elegante', icon: '🌹', price: 10, color: 'text-rose-500', animation: 'animate-ping' },
+  { id: 'm2', name: 'Champagne', icon: '🥂', price: 50, color: 'text-amber-400', animation: 'animate-bounce' },
+  { id: 'm3', name: 'Diamante', icon: '💎', price: 100, color: 'text-cyan-400', animation: 'animate-pulse' },
+  { id: 'm4', name: 'Rubi Ardente', icon: '💋', price: 500, color: 'text-red-500', animation: 'animate-pulse' },
+  { id: 'm5', name: 'Coroa Imperial', icon: '👑', price: 1000, color: 'text-gold', animation: 'animate-bounce' },
 ];
 
 export const STORIES: StoryItem[] = [
