@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Heart, Gift, Lock, Send, UserPlus, Coins, X, Play, Check, ShoppingBag, Package, Clock, Eye } from 'lucide-react';
+import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, Coins } from 'lucide-react';
 import { LIVE_STREAMS, MIMOS } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
+import crisexToken from '@/assets/crisex-token.png';
 
 interface LiveViewProps {
   balance: number;
@@ -131,7 +132,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
             <div className="relative"><img src={currentStream?.streamerImage} alt={currentStream?.streamer} className="w-11 h-11 rounded-full object-cover ring-2 ring-primary" /><div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-background" /></div>
             <div><p className="text-sm font-bold text-foreground">{currentStream?.streamer}</p><p className="text-xs text-muted-foreground">{currentStream?.viewers.toLocaleString()} assistindo</p></div>
           </div>
-          <div className="flex items-center gap-2"><div className="px-3 py-1.5 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-2"><span className="text-sm">💎</span><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
+          <div className="flex items-center gap-2"><div className="px-3 py-1.5 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-2"><img src={crisexToken} alt="CRISEX" className="w-5 h-5" /><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
         </div>
         <div className="bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/20">
           <div className="flex items-center justify-between mb-2">
@@ -168,7 +169,8 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
             </div>
             <div className="p-2 bg-card text-center">
               <p className="text-[9px] font-semibold text-foreground truncate">{product.title}</p>
-              <div className="flex items-center justify-center gap-1.5 mt-1">
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
                 <span className="text-[11px] font-bold text-green-500">{product.price}</span>
                 <span className="text-[7px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">{product.badge}</span>
               </div>
@@ -247,7 +249,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
           <div className="relative w-full glass-dark rounded-t-3xl p-6 animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
-            <div className="flex items-center justify-between mb-4"><h3 className="text-xl font-bold text-foreground">Enviar Mimo 🎁</h3><div className="px-3 py-1.5 bg-secondary rounded-full flex items-center gap-2"><span className="text-sm">💎</span><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
+            <div className="flex items-center justify-between mb-4"><h3 className="text-xl font-bold text-foreground">Enviar Mimo 🎁</h3><div className="px-3 py-1.5 bg-secondary rounded-full flex items-center gap-2"><img src={crisexToken} alt="CRISEX" className="w-5 h-5" /><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
             <div className="grid grid-cols-5 gap-3">{MIMOS.map((mimo) => (<button key={mimo.id} onClick={() => sendMimo(mimo)} disabled={balance < mimo.price} className={`flex flex-col items-center p-3 rounded-xl transition-all active:scale-95 ${balance >= mimo.price ? 'bg-secondary hover:bg-secondary/80' : 'opacity-40'}`}><span className="text-3xl mb-1">{mimo.icon}</span><span className="text-xs font-semibold text-foreground">{mimo.price}</span></button>))}</div>
             <button onClick={() => setShowMimos(false)} className="absolute top-4 right-4 w-8 h-8 bg-secondary rounded-full flex items-center justify-center"><X className="w-4 h-4 text-foreground" /></button>
           </div>
@@ -259,8 +261,8 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
           <div className="relative w-full glass-dark rounded-t-3xl p-6 animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
-            <div className="flex items-center justify-between mb-4"><h3 className="text-xl font-bold text-foreground">Enviar CRISEX 💎</h3><div className="px-3 py-1.5 bg-secondary rounded-full flex items-center gap-2"><span className="text-sm">💎</span><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
-            <div className="grid grid-cols-4 gap-3">{[50, 100, 200, 500, 1000, 2000, 5000, 10000].map((amount) => (<button key={amount} onClick={() => sendCrisex(amount)} disabled={balance < amount} className={`flex flex-col items-center p-3 rounded-xl transition-all active:scale-95 ${balance >= amount ? 'bg-secondary hover:bg-primary/20 border border-transparent hover:border-primary/50' : 'opacity-40'}`}><Coins className="w-6 h-6 text-primary mb-1" /><span className="text-sm font-bold text-foreground">{amount >= 1000 ? `${amount/1000}K` : amount}</span></button>))}</div>
+            <div className="flex items-center justify-between mb-4"><h3 className="text-xl font-bold text-foreground">Enviar CRISEX</h3><div className="px-3 py-1.5 bg-secondary rounded-full flex items-center gap-2"><img src={crisexToken} alt="CRISEX" className="w-5 h-5" /><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
+            <div className="grid grid-cols-4 gap-3">{[50, 100, 200, 500, 1000, 2000, 5000, 10000].map((amount) => (<button key={amount} onClick={() => sendCrisex(amount)} disabled={balance < amount} className={`flex flex-col items-center p-3 rounded-xl transition-all active:scale-95 ${balance >= amount ? 'bg-secondary hover:bg-primary/20 border border-transparent hover:border-primary/50' : 'opacity-40'}`}><img src={crisexToken} alt="CRISEX" className="w-6 h-6 mb-1" /><span className="text-sm font-bold text-foreground">{amount >= 1000 ? `${amount/1000}K` : amount}</span></button>))}</div>
             <button onClick={() => setShowCrisexModal(false)} className="absolute top-4 right-4 w-8 h-8 bg-secondary rounded-full flex items-center justify-center"><X className="w-4 h-4 text-foreground" /></button>
           </div>
         </div>
@@ -309,14 +311,14 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Preço</p>
                   <div className="flex items-center gap-1">
+                    <img src={crisexToken} alt="CRISEX" className="w-5 h-5" />
                     <span className="text-lg font-bold text-primary">{selectedProduct.price}</span>
-                    <span className="text-xs text-muted-foreground">CRISEX</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Seu Saldo</p>
                   <div className="flex items-center gap-1 justify-end">
-                    <span className="text-sm">💎</span>
+                    <img src={crisexToken} alt="CRISEX" className="w-5 h-5" />
                     <span className={`text-lg font-bold ${balance >= selectedProduct.price ? 'text-foreground' : 'text-destructive'}`}>
                       {balance.toLocaleString()}
                     </span>
@@ -444,7 +446,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                       <div className="flex items-center justify-between p-3 bg-primary/10 rounded-xl">
                         <span className="text-xs text-muted-foreground">Valor pago</span>
                         <div className="flex items-center gap-1">
-                          <span className="text-sm">💎</span>
+                          <img src={crisexToken} alt="CRISEX" className="w-5 h-5" />
                           <span className="text-base font-bold text-primary">{selectedPurchased.price}</span>
                         </div>
                       </div>
@@ -488,7 +490,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs">💎</span>
+                          <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
                           <span className="text-sm font-bold text-primary">{item.price}</span>
                         </div>
                         <Eye className="w-4 h-4 text-muted-foreground mt-2 ml-auto" />
