@@ -32,10 +32,10 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
   }, [selectedCategory]);
 
   return (
-    <div className={cn("w-full pt-1", className)}>
+    <div className={cn("w-full", className)}>
       <div 
         ref={containerRef}
-        className="flex items-center gap-2 px-3 overflow-x-auto hide-scrollbar"
+        className="flex items-center gap-1 overflow-x-auto hide-scrollbar"
       >
         {CATEGORIES.map((category) => {
           const isSelected = selectedCategory === category.id;
