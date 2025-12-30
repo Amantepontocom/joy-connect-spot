@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, Coins } from 'lucide-react';
 import { LIVE_STREAMS, MIMOS } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
+import { playMimoSound, initAudioContext } from '@/lib/mimoSounds';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface LiveViewProps {
@@ -63,13 +64,17 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       const newMessage: ChatMessage = { id: Date.now().toString(), username: randomUser.username, message: randomMsg.text, avatar: randomUser.avatar, isVip: randomUser.isVip, hasMimo: randomMsg.hasMimo, mimoIcon: randomMsg.mimoIcon, crisexAmount: randomMsg.crisexAmount, timestamp: Date.now() };
       setFloatingMessages(prev => [...prev.slice(-12), newMessage]);
       if (randomMsg.crisexAmount) setMetaProgress(prev => Math.min(prev + randomMsg.crisexAmount!, metaGoal));
+      // Play mimo sound when a mimo message arrives
+      if (randomMsg.mimoIcon) {
+        playMimoSound(randomMsg.mimoIcon);
+      }
     }, 2000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => { if (messagesContainerRef.current) messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight; }, [floatingMessages]);
 
-  const sendMimo = (mimo: typeof MIMOS[0]) => { if (balance >= mimo.price) { setBalance(prev => prev - mimo.price); setMetaProgress(prev => Math.min(prev + mimo.price, metaGoal)); setShowMimos(false); } };
+  const sendMimo = (mimo: typeof MIMOS[0]) => { if (balance >= mimo.price) { setBalance(prev => prev - mimo.price); setMetaProgress(prev => Math.min(prev + mimo.price, metaGoal)); playMimoSound(mimo.icon); setShowMimos(false); } };
   const sendCrisex = (amount: number) => { if (balance >= amount) { setBalance(prev => prev - amount); setMetaProgress(prev => Math.min(prev + amount, metaGoal)); setShowCrisexModal(false); } };
   const handleSendMessage = () => { if (chatMessage.trim()) { setFloatingMessages(prev => [...prev.slice(-12), { id: Date.now().toString(), username: 'você', message: chatMessage.trim(), avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50', timestamp: Date.now() }]); setChatMessage(''); } };
 
@@ -265,7 +270,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         <button onClick={() => setShowCrisexModal(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-primary/50 rounded-full flex items-center justify-center active:scale-90 transition-all"><Coins className="w-5 h-5 text-primary" /></div><span className="text-[10px] text-foreground font-medium">CRISEX</span></button>
       </div>
 
-      {!isPlaying && (<button onClick={() => setIsPlaying(true)} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center shadow-glow animate-pulse-slow"><Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" /></div><p className="text-center text-sm font-semibold text-foreground mt-3 tracking-wide">ENTRAR NA LIVE</p></button>)}
+      {!isPlaying && (<button onClick={() => { setIsPlaying(true); initAudioContext(); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center shadow-glow animate-pulse-slow"><Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" /></div><p className="text-center text-sm font-semibold text-foreground mt-3 tracking-wide">ENTRAR NA LIVE</p></button>)}
 
       <div className="absolute bottom-0 left-0 right-0 z-30 p-3 bg-gradient-to-t from-background via-background/80 to-transparent pt-8">
         <div className="flex items-center gap-2">
