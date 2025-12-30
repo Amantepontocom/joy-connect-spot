@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Heart, Gift, Lock, Send, UserPlus, Coins, X, Play } from 'lucide-react';
+import { Heart, Gift, Lock, Send, UserPlus, Coins, X, Play, Check, ShoppingBag } from 'lucide-react';
 import { LIVE_STREAMS, MIMOS } from '@/lib/mockData';
+import { toast } from '@/hooks/use-toast';
 
 interface LiveViewProps {
   balance: number;
@@ -11,12 +12,29 @@ interface ChatMessage {
   id: string; username: string; message: string; avatar: string; isVip?: boolean; hasMimo?: boolean; mimoIcon?: string; crisexAmount?: number; timestamp: number;
 }
 
+interface ProductItem {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  type: 'pack' | 'video';
+  badge: string;
+}
+
 const MOCK_USERS = [{ username: 'maria_vip', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50', isVip: true }, { username: 'joao123', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50', isVip: false }];
 const MOCK_MESSAGES = [{ text: 'Olá! 👋', hasMimo: false }, { text: 'Linda demais! 😍', hasMimo: false }, { text: 'Enviou 🌹', hasMimo: true, mimoIcon: '🌹', crisexAmount: 50 }];
+
+const LIVE_PRODUCTS: ProductItem[] = [
+  { id: '1', title: 'PACK VERÃO ...', price: 450, image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200', type: 'pack', badge: 'VIP' },
+  { id: '2', title: 'VÍDEO HOT ...', price: 800, image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200', type: 'video', badge: '🔒' },
+];
 
 export function LiveView({ balance, setBalance }: LiveViewProps) {
   const [showMimos, setShowMimos] = useState(false);
   const [showCrisexModal, setShowCrisexModal] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -44,6 +62,34 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
   const sendMimo = (mimo: typeof MIMOS[0]) => { if (balance >= mimo.price) { setBalance(prev => prev - mimo.price); setMetaProgress(prev => Math.min(prev + mimo.price, metaGoal)); setShowMimos(false); } };
   const sendCrisex = (amount: number) => { if (balance >= amount) { setBalance(prev => prev - amount); setMetaProgress(prev => Math.min(prev + amount, metaGoal)); setShowCrisexModal(false); } };
   const handleSendMessage = () => { if (chatMessage.trim()) { setFloatingMessages(prev => [...prev.slice(-12), { id: Date.now().toString(), username: 'você', message: chatMessage.trim(), avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50', timestamp: Date.now() }]); setChatMessage(''); } };
+
+  const openProductModal = (product: ProductItem) => {
+    setSelectedProduct(product);
+    setPurchaseSuccess(false);
+    setShowProductModal(true);
+  };
+
+  const handlePurchase = () => {
+    if (!selectedProduct) return;
+    if (balance >= selectedProduct.price) {
+      setBalance(prev => prev - selectedProduct.price);
+      setPurchaseSuccess(true);
+      toast({
+        title: "Compra realizada! 🎉",
+        description: `${selectedProduct.title} foi adicionado à sua coleção.`,
+      });
+      setTimeout(() => {
+        setShowProductModal(false);
+        setPurchaseSuccess(false);
+      }, 1500);
+    } else {
+      toast({
+        title: "Saldo insuficiente",
+        description: "Você não tem CRISEX suficiente para esta compra.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const progressPercent = (metaProgress / metaGoal) * 100;
 
@@ -73,59 +119,37 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
 
       {/* Product Cards - Left Side */}
       <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
-        {/* Product Card 1 */}
-        <div className="w-20 bg-card/90 backdrop-blur-sm rounded-xl overflow-hidden border border-border/30 shadow-lg">
-          <div className="relative">
-            <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 py-0.5 px-1.5">
-              <p className="text-[7px] font-bold text-primary-foreground uppercase tracking-wide text-center">Comprar</p>
-              <p className="text-[8px] font-extrabold text-primary-foreground uppercase text-center">Novidades</p>
+        {LIVE_PRODUCTS.map((product) => (
+          <button
+            key={product.id}
+            onClick={() => openProductModal(product)}
+            className="w-20 bg-card/90 backdrop-blur-sm rounded-xl overflow-hidden border border-border/30 shadow-lg hover:scale-105 transition-transform active:scale-95"
+          >
+            <div className="relative">
+              <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 py-0.5 px-1.5 z-10">
+                <p className="text-[7px] font-bold text-primary-foreground uppercase tracking-wide text-center">
+                  {product.type === 'pack' ? 'Comprar' : 'Vídeo'}
+                </p>
+                <p className="text-[8px] font-extrabold text-primary-foreground uppercase text-center">
+                  {product.type === 'pack' ? 'Novidades' : 'Privado'}
+                </p>
+              </div>
+              <div className="aspect-[3/4] bg-muted/50">
+                <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+              </div>
             </div>
-            <div className="aspect-[3/4] bg-muted/50">
-              <img 
-                src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200" 
-                alt="Pack" 
-                className="w-full h-full object-cover"
-              />
+            <div className="p-1.5 bg-card text-left">
+              <p className="text-[8px] font-semibold text-foreground truncate">{product.title}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-[9px] font-bold text-primary">{product.price}</span>
+                <span className="text-[6px] bg-primary/20 text-primary px-1 py-0.5 rounded font-bold">{product.badge}</span>
+              </div>
+              <div className="w-full mt-1 py-1 bg-primary rounded text-[7px] font-bold text-primary-foreground uppercase tracking-wide">
+                Comprar
+              </div>
             </div>
-          </div>
-          <div className="p-1.5 bg-card">
-            <p className="text-[8px] font-semibold text-foreground truncate">PACK VERÃO ...</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-[9px] font-bold text-primary">450</span>
-              <span className="text-[6px] bg-primary/20 text-primary px-1 py-0.5 rounded font-bold">VIP</span>
-            </div>
-            <button className="w-full mt-1 py-1 bg-primary rounded text-[7px] font-bold text-primary-foreground uppercase tracking-wide hover:bg-primary/90 transition-colors">
-              Comprar
-            </button>
-          </div>
-        </div>
-
-        {/* Product Card 2 */}
-        <div className="w-20 bg-card/90 backdrop-blur-sm rounded-xl overflow-hidden border border-border/30 shadow-lg">
-          <div className="relative">
-            <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 py-0.5 px-1.5">
-              <p className="text-[7px] font-bold text-primary-foreground uppercase tracking-wide text-center">Vídeo</p>
-              <p className="text-[8px] font-extrabold text-primary-foreground uppercase text-center">Privado</p>
-            </div>
-            <div className="aspect-[3/4] bg-muted/50">
-              <img 
-                src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200" 
-                alt="Video Privado" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-          <div className="p-1.5 bg-card">
-            <p className="text-[8px] font-semibold text-foreground truncate">VÍDEO HOT ...</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-[9px] font-bold text-primary">800</span>
-              <span className="text-[6px] bg-primary/20 text-primary px-1 py-0.5 rounded font-bold">🔒</span>
-            </div>
-            <button className="w-full mt-1 py-1 bg-primary rounded text-[7px] font-bold text-primary-foreground uppercase tracking-wide hover:bg-primary/90 transition-colors">
-              Comprar
-            </button>
-          </div>
-        </div>
+          </button>
+        ))}
       </div>
 
       {/* Chat Messages - Below Product Cards */}
@@ -183,6 +207,97 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
             <div className="flex items-center justify-between mb-4"><h3 className="text-xl font-bold text-foreground">Enviar CRISEX 💎</h3><div className="px-3 py-1.5 bg-secondary rounded-full flex items-center gap-2"><span className="text-sm">💎</span><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
             <div className="grid grid-cols-4 gap-3">{[50, 100, 200, 500, 1000, 2000, 5000, 10000].map((amount) => (<button key={amount} onClick={() => sendCrisex(amount)} disabled={balance < amount} className={`flex flex-col items-center p-3 rounded-xl transition-all active:scale-95 ${balance >= amount ? 'bg-secondary hover:bg-primary/20 border border-transparent hover:border-primary/50' : 'opacity-40'}`}><Coins className="w-6 h-6 text-primary mb-1" /><span className="text-sm font-bold text-foreground">{amount >= 1000 ? `${amount/1000}K` : amount}</span></button>))}</div>
             <button onClick={() => setShowCrisexModal(false)} className="absolute top-4 right-4 w-8 h-8 bg-secondary rounded-full flex items-center justify-center"><X className="w-4 h-4 text-foreground" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Product Purchase Modal */}
+      {showProductModal && selectedProduct && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowProductModal(false)}>
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-md" />
+          <div 
+            className="relative w-full max-w-xs bg-card rounded-3xl overflow-hidden border border-border/30 shadow-2xl animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Product Image */}
+            <div className="relative aspect-[3/4] w-full">
+              <img 
+                src={selectedProduct.image} 
+                alt={selectedProduct.title} 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+              <button 
+                onClick={() => setShowProductModal(false)} 
+                className="absolute top-3 right-3 w-8 h-8 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-foreground" />
+              </button>
+              <div className="absolute top-3 left-3 px-2 py-1 bg-primary rounded-full">
+                <span className="text-[10px] font-bold text-primary-foreground uppercase">
+                  {selectedProduct.type === 'pack' ? 'Pack Exclusivo' : 'Vídeo Privado'}
+                </span>
+              </div>
+            </div>
+
+            {/* Product Info */}
+            <div className="p-5 -mt-8 relative">
+              <h3 className="text-lg font-bold text-foreground mb-1">{selectedProduct.title}</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                {selectedProduct.type === 'pack' 
+                  ? 'Pack com fotos exclusivas em alta qualidade' 
+                  : 'Vídeo privado de conteúdo exclusivo'}
+              </p>
+
+              {/* Price & Balance */}
+              <div className="flex items-center justify-between mb-4 p-3 bg-secondary/50 rounded-xl">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Preço</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg font-bold text-primary">{selectedProduct.price}</span>
+                    <span className="text-xs text-muted-foreground">CRISEX</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Seu Saldo</p>
+                  <div className="flex items-center gap-1 justify-end">
+                    <span className="text-sm">💎</span>
+                    <span className={`text-lg font-bold ${balance >= selectedProduct.price ? 'text-foreground' : 'text-destructive'}`}>
+                      {balance.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase Button */}
+              {purchaseSuccess ? (
+                <div className="w-full py-3 bg-green-500 rounded-xl flex items-center justify-center gap-2">
+                  <Check className="w-5 h-5 text-white" />
+                  <span className="text-sm font-bold text-white">Compra Realizada!</span>
+                </div>
+              ) : (
+                <button
+                  onClick={handlePurchase}
+                  disabled={balance < selectedProduct.price}
+                  className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                    balance >= selectedProduct.price 
+                      ? 'gradient-primary shadow-glow' 
+                      : 'bg-muted cursor-not-allowed'
+                  }`}
+                >
+                  <ShoppingBag className={`w-5 h-5 ${balance >= selectedProduct.price ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                  <span className={`text-sm font-bold ${balance >= selectedProduct.price ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
+                    {balance >= selectedProduct.price ? 'Confirmar Compra' : 'Saldo Insuficiente'}
+                  </span>
+                </button>
+              )}
+
+              {balance < selectedProduct.price && !purchaseSuccess && (
+                <p className="text-[10px] text-center text-muted-foreground mt-2">
+                  Você precisa de mais {(selectedProduct.price - balance).toLocaleString()} CRISEX
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
