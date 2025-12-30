@@ -181,22 +181,31 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       </div>
 
       {/* Chat Messages - Left Side Extended */}
-      <div className="absolute left-2 bottom-16 z-20 w-44 max-h-[30vh]">
+      <div className="absolute left-2 bottom-16 z-20 w-48 max-h-[30vh]">
         <div ref={messagesContainerRef} className="flex flex-col gap-1.5 justify-end overflow-hidden">
           {floatingMessages.slice(-6).map((msg, index) => {
             const totalMsgs = Math.min(floatingMessages.length, 6);
             const opacity = 0.5 + (index / totalMsgs) * 0.5;
+            const hasMimoOrCrisex = msg.hasMimo || msg.crisexAmount;
             return (
               <div 
                 key={msg.id} 
-                className="flex items-center gap-1.5" 
+                className={`flex items-center gap-1.5 ${hasMimoOrCrisex ? 'animate-scale-in' : ''}`}
                 style={{ opacity }}
               >
-                <img src={msg.avatar} alt={msg.username} className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-                <div className={`rounded-full px-2 py-1 backdrop-blur-md flex items-center gap-1 ${msg.hasMimo || msg.crisexAmount ? 'bg-primary/30' : 'bg-card/50'}`}>
-                  <span className={`text-[9px] font-semibold truncate max-w-[50px] ${msg.isVip ? 'text-primary' : 'text-foreground'}`}>{msg.username}</span>
-                  {msg.mimoIcon && <span className="text-xs">{msg.mimoIcon}</span>}
-                  <span className={`text-[9px] truncate max-w-[60px] ${msg.crisexAmount ? 'text-primary' : 'text-foreground/80'}`}>{msg.message}</span>
+                <img 
+                  src={msg.avatar} 
+                  alt={msg.username} 
+                  className={`rounded-full object-cover flex-shrink-0 ${hasMimoOrCrisex ? 'w-8 h-8 ring-2 ring-primary' : 'w-5 h-5'}`} 
+                />
+                <div className={`rounded-full px-2 py-1 backdrop-blur-md flex items-center gap-1 ${hasMimoOrCrisex ? 'bg-primary/40 py-1.5 px-3' : 'bg-card/50'}`}>
+                  <span className={`font-semibold truncate ${hasMimoOrCrisex ? 'text-[11px] max-w-[55px] text-primary' : 'text-[9px] max-w-[50px]'} ${msg.isVip ? 'text-primary' : hasMimoOrCrisex ? 'text-primary' : 'text-foreground'}`}>
+                    {msg.username}
+                  </span>
+                  {msg.mimoIcon && <span className={hasMimoOrCrisex ? 'text-base' : 'text-xs'}>{msg.mimoIcon}</span>}
+                  <span className={`truncate ${hasMimoOrCrisex ? 'text-[11px] max-w-[70px] text-primary font-semibold' : 'text-[9px] max-w-[60px] text-foreground/80'}`}>
+                    {msg.message}
+                  </span>
                 </div>
               </div>
             );
