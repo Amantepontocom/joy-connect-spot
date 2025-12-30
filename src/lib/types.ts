@@ -6,7 +6,8 @@ export enum AppMode {
   LIVE = 'LIVE',
   CHAT = 'CHAT',
   SHOP = 'SHOP',
-  PROFILE = 'PROFILE'
+  PROFILE = 'PROFILE',
+  MONETIZATION = 'MONETIZATION'
 }
 
 export interface MimoType {
