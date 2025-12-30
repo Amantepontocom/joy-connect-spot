@@ -200,12 +200,12 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                   alt={msg.username} 
                   className={`rounded-full object-cover flex-shrink-0 ${hasMimoOrCrisex ? 'w-8 h-8 ring-2 ring-primary' : 'w-5 h-5'}`} 
                 />
-                <div className={`rounded-full px-2 py-1 backdrop-blur-md flex items-center gap-1 ${hasMimoOrCrisex ? 'bg-primary/40 py-1.5 px-3' : 'bg-card/50'}`}>
-                  <span className={`font-semibold truncate ${hasMimoOrCrisex ? 'text-[11px] max-w-[55px] text-primary' : 'text-[9px] max-w-[50px]'} ${msg.isVip ? 'text-primary' : hasMimoOrCrisex ? 'text-primary' : 'text-foreground'}`}>
+              <div className={`rounded-full px-2.5 py-1.5 backdrop-blur-md flex items-center gap-1.5 ${hasMimoOrCrisex ? 'bg-primary/40 py-2 px-3.5' : 'bg-card/50'}`}>
+                  <span className={`font-semibold truncate ${hasMimoOrCrisex ? 'text-xs max-w-[60px] text-primary' : 'text-[11px] max-w-[55px]'} ${msg.isVip ? 'text-primary' : hasMimoOrCrisex ? 'text-primary' : 'text-foreground'}`}>
                     {msg.username}
                   </span>
-                  {msg.mimoIcon && <span className={hasMimoOrCrisex ? 'text-base' : 'text-xs'}>{msg.mimoIcon}</span>}
-                  <span className={`truncate ${hasMimoOrCrisex ? 'text-[11px] max-w-[70px] text-primary font-semibold' : 'text-[9px] max-w-[60px] text-foreground/80'}`}>
+                  {msg.mimoIcon && <span className={hasMimoOrCrisex ? 'text-lg' : 'text-sm'}>{msg.mimoIcon}</span>}
+                  <span className={`truncate ${hasMimoOrCrisex ? 'text-xs max-w-[80px] text-primary font-semibold' : 'text-[11px] max-w-[70px] text-foreground/80'}`}>
                     {msg.message}
                   </span>
                 </div>
