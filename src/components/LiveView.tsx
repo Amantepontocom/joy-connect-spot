@@ -207,15 +207,15 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-background">
-      {/* Category Filter Header */}
-      <div className="absolute top-0 left-0 right-0 z-50">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-black/40" /></div>
+
+      {/* Category Filter Header - Fixed at very top */}
+      <div className="absolute top-0 left-0 right-0 z-50 safe-area-top">
         <CategoryFilter 
           selectedCategory={selectedCategory} 
           onCategoryChange={setSelectedCategory}
         />
       </div>
-
-      <div className="absolute inset-0 bg-cover bg-center pt-14" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-background/60" /></div>
 
       <div className="absolute top-0 left-0 right-0 z-30 p-4 pt-2">
         <div className="flex items-center justify-between mb-3">
