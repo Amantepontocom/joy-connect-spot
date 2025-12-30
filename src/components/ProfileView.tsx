@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Settings, Grid3X3, Film, Heart, Crown, Share2, UserPlus, MoreHorizontal, Edit2 } from 'lucide-react';
+import { Settings, Grid3X3, Film, Heart, Crown, Share2, UserPlus, MoreHorizontal, Edit2, TrendingUp, DollarSign, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AppMode } from '@/lib/types';
 
 interface ProfileViewProps {
   balance: number;
@@ -8,12 +9,13 @@ interface ProfileViewProps {
   userImages: string[];
   userPosts: { id: string; thumbnail: string; likes: number }[];
   onPlusClick?: () => void;
+  onNavigate?: (mode: AppMode) => void;
 }
 
 const TABS = [{ id: 'posts', icon: Grid3X3 }, { id: 'reels', icon: Film }, { id: 'likes', icon: Heart }];
 const SAMPLE_POSTS = ['https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300', 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300', 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300', 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=300'];
 
-export function ProfileView({ balance, onPlusClick }: ProfileViewProps) {
+export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewProps) {
   const [activeTab, setActiveTab] = useState('posts');
   const [isFollowing, setIsFollowing] = useState(false);
 
@@ -60,6 +62,21 @@ export function ProfileView({ balance, onPlusClick }: ProfileViewProps) {
             <Button className="gradient-primary rounded-xl shadow-pink-sm">Adicionar</Button>
           </div>
         </div>
+
+        {/* Monetization Card */}
+        <button 
+          onClick={() => onNavigate?.(AppMode.MONETIZATION)}
+          className="w-full mt-4 p-4 bg-gradient-to-r from-emerald-500/10 via-green-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-3 active:scale-[0.98] transition-transform"
+        >
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-6 h-6 text-emerald-500" />
+          </div>
+          <div className="flex-1 text-left">
+            <h4 className="text-sm font-bold text-foreground">Programa de Monetização</h4>
+            <p className="text-xs text-muted-foreground">Ganhe 70% em vendas, lives e mimos</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-emerald-500" />
+        </button>
 
         <div className="flex gap-3 mt-4">
           <Button onClick={() => setIsFollowing(!isFollowing)} className={`flex-1 h-12 rounded-xl font-semibold transition-all ${isFollowing ? 'bg-secondary text-foreground hover:bg-secondary/80' : 'gradient-primary text-primary-foreground shadow-pink-sm'}`}>{isFollowing ? 'Seguindo' : 'Seguir'}</Button>
