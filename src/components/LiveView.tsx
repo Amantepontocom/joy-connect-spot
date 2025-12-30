@@ -58,6 +58,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [showMuteIndicator, setShowMuteIndicator] = useState(false);
   const [metaProgress, setMetaProgress] = useState(2350);
   const [floatingMessages, setFloatingMessages] = useState<ChatMessage[]>([]);
   const [chatMessage, setChatMessage] = useState('');
@@ -315,7 +316,30 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
 
   return (
     <div className="h-full w-full relative overflow-hidden bg-background">
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-black/40" /></div>
+      <div 
+        className="absolute inset-0 bg-cover bg-center cursor-pointer" 
+        style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}
+        onClick={() => {
+          setIsMuted(!isMuted);
+          setShowMuteIndicator(true);
+          setTimeout(() => setShowMuteIndicator(false), 800);
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-black/40" />
+      </div>
+
+      {/* Mute/Unmute center indicator - TikTok/Kwai style */}
+      {showMuteIndicator && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
+          <div className="w-16 h-16 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center animate-scale-in">
+            {isMuted ? (
+              <VolumeX className="w-8 h-8 text-white" />
+            ) : (
+              <Volume2 className="w-8 h-8 text-white" />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Discrete Mode Timer Display - Always visible when active */}
       {discreteMode && (
@@ -500,23 +524,21 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         <button onClick={() => setShowMimos(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center active:scale-90 transition-all shadow-glow"><Gift className="w-5 h-5 text-primary-foreground" /></div><span className="text-[10px] text-foreground font-medium">Mimos</span></button>
         <button onClick={() => setShowCrisexModal(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-primary/50 rounded-full flex items-center justify-center active:scale-90 transition-all"><Coins className="w-5 h-5 text-primary" /></div><span className="text-[10px] text-foreground font-medium">CRISEX</span></button>
         
-        {/* Mute/Unmute Button */}
-        <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1">
+        {/* Discrete Mode Button */}
+        <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
           <div className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all ${
-            isMuted 
-              ? 'bg-primary/30 border border-primary/50' 
+            discreteMode 
+              ? 'bg-primary shadow-glow' 
               : 'bg-card/50 backdrop-blur-sm border border-border/30'
           }`}>
-            {isMuted ? (
-              <VolumeX className="w-5 h-5 text-primary" />
+            {discreteMode ? (
+              <EyeOff className="w-5 h-5 text-primary-foreground" />
             ) : (
-              <Volume2 className="w-5 h-5 text-foreground" />
+              <Eye className="w-5 h-5 text-foreground" />
             )}
           </div>
-          <span className="text-[10px] text-foreground font-medium">{isMuted ? 'Mudo' : 'Som'}</span>
+          <span className="text-[10px] text-foreground font-medium">Discreto</span>
         </button>
-        
-        {/* Discrete Mode Button */}
         <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
           <div className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all ${
             discreteMode 

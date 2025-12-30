@@ -51,6 +51,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const [currentReel, setCurrentReel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+  const [showMuteIndicator, setShowMuteIndicator] = useState(false);
   const [likedReels, setLikedReels] = useState<Set<string>>(new Set());
   const [isFollowing, setIsFollowing] = useState(false);
   const [showMimos, setShowMimos] = useState(false);
@@ -623,18 +624,39 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           muted={isMuted}
           playsInline
           autoPlay
-          onClick={() => setIsPlaying(!isPlaying)}
+          onClick={() => {
+            setIsMuted(!isMuted);
+            setShowMuteIndicator(true);
+            setTimeout(() => setShowMuteIndicator(false), 800);
+          }}
         />
       ) : (
         <div 
           className="absolute inset-0 bg-cover bg-center" 
           style={{ backgroundImage: `url(${reel.thumbnail_url})` }} 
-          onClick={() => setIsPlaying(!isPlaying)}
+          onClick={() => {
+            setIsMuted(!isMuted);
+            setShowMuteIndicator(true);
+            setTimeout(() => setShowMuteIndicator(false), 800);
+          }}
         />
       )}
       
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
+
+      {/* Mute/Unmute center indicator - TikTok/Kwai style */}
+      {showMuteIndicator && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
+          <div className="w-16 h-16 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center animate-scale-in">
+            {isMuted ? (
+              <VolumeX className="w-8 h-8 text-white" />
+            ) : (
+              <Volume2 className="w-8 h-8 text-white" />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Discrete Mode Timer Display - Always visible when active */}
       {discreteMode && (
@@ -658,17 +680,8 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           </div>
 
           {/* Touch zones for navigation */}
-          <div className="absolute top-0 bottom-24 left-0 w-1/3 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('up'); }} />
-          <div className="absolute top-0 bottom-24 right-0 w-1/3 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('down'); }} />
-
-          {/* Play/Pause indicator */}
-          {!isPlaying && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-              <div className="w-20 h-20 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center animate-scale-in">
-                <Play className="w-10 h-10 text-white ml-1" />
-              </div>
-            </div>
-          )}
+          <div className="absolute top-16 bottom-24 left-0 w-1/4 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('up'); }} />
+          <div className="absolute top-16 bottom-24 right-16 w-1/4 z-10" onClick={(e) => { e.stopPropagation(); handleScroll('down'); }} />
 
 
       {/* Right side actions */}
@@ -734,23 +747,21 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           <span className="text-[10px] text-white font-semibold">MIMO</span>
         </button>
 
-        {/* Mute/Unmute Button */}
-        <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1">
+        {/* Discrete Mode Button */}
+        <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
           <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-            isMuted 
-              ? 'bg-white/30 backdrop-blur-sm' 
+            discreteMode 
+              ? 'bg-primary shadow-glow' 
               : 'bg-white/10 backdrop-blur-sm border border-white/20'
           }`}>
-            {isMuted ? (
-              <VolumeX className="w-5 h-5 text-white" />
+            {discreteMode ? (
+              <EyeOff className="w-5 h-5 text-white" />
             ) : (
-              <Volume2 className="w-5 h-5 text-white" />
+              <Eye className="w-5 h-5 text-white" />
             )}
           </div>
-          <span className="text-[10px] text-white font-semibold">{isMuted ? 'MUDO' : 'SOM'}</span>
+          <span className="text-[10px] text-white font-semibold">DISCRETO</span>
         </button>
-
-        {/* Discrete Mode Button */}
         <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
           <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
             discreteMode 
