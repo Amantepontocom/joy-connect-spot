@@ -14,13 +14,283 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          created_at: string
+          crisex_amount: number | null
+          id: string
+          live_id: string
+          message: string
+          mimo_icon: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          crisex_amount?: number | null
+          id?: string
+          live_id: string
+          message: string
+          mimo_icon?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          crisex_amount?: number | null
+          id?: string
+          live_id?: string
+          message?: string
+          mimo_icon?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lives: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          is_active: boolean | null
+          meta_goal: number | null
+          meta_progress: number | null
+          streamer_id: string
+          thumbnail_url: string | null
+          title: string
+          viewers_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          meta_goal?: number | null
+          meta_progress?: number | null
+          streamer_id: string
+          thumbnail_url?: string | null
+          title: string
+          viewers_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          meta_goal?: number | null
+          meta_progress?: number | null
+          streamer_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          viewers_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lives_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mimos_history: {
+        Row: {
+          created_at: string
+          id: string
+          live_id: string | null
+          mimo_icon: string
+          mimo_name: string
+          price: number
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          live_id?: string | null
+          mimo_icon: string
+          mimo_name: string
+          price: number
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          live_id?: string | null
+          mimo_icon?: string
+          mimo_name?: string
+          price?: number
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mimos_history_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mimos_history_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          badge: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          price: number
+          title: string
+          type: string
+        }
+        Insert: {
+          badge?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          price: number
+          title: string
+          type: string
+        }
+        Update: {
+          badge?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          price?: number
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          balance: number
+          created_at: string
+          display_name: string | null
+          id: string
+          is_vip: boolean | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          balance?: number
+          created_at?: string
+          display_name?: string | null
+          id: string
+          is_vip?: boolean | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          balance?: number
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_vip?: boolean | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          product_id: string | null
+          product_price: number
+          product_title: string
+          product_type: string
+          seller_id: string | null
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_price: number
+          product_title: string
+          product_type: string
+          seller_id?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_price?: number
+          product_title?: string
+          product_type?: string
+          seller_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_balance: {
+        Args: { amount: number; user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
