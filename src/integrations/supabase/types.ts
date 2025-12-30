@@ -94,6 +94,42 @@ export type Database = {
           },
         ]
       }
+      creator_earnings: {
+        Row: {
+          created_at: string
+          creator_id: string
+          gross_amount: number
+          id: string
+          net_amount: number
+          platform_commission: number
+          source_id: string | null
+          source_type: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          gross_amount: number
+          id?: string
+          net_amount: number
+          platform_commission: number
+          source_id?: string | null
+          source_type: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          platform_commission?: number
+          source_id?: string | null
+          source_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
       discrete_mode_transactions: {
         Row: {
           amount: number
@@ -212,30 +248,36 @@ export type Database = {
       mimos_history: {
         Row: {
           created_at: string
+          creator_earnings: number | null
           id: string
           live_id: string | null
           mimo_icon: string
           mimo_name: string
+          platform_commission: number | null
           price: number
           receiver_id: string
           sender_id: string
         }
         Insert: {
           created_at?: string
+          creator_earnings?: number | null
           id?: string
           live_id?: string | null
           mimo_icon: string
           mimo_name: string
+          platform_commission?: number | null
           price: number
           receiver_id: string
           sender_id: string
         }
         Update: {
           created_at?: string
+          creator_earnings?: number | null
           id?: string
           live_id?: string | null
           mimo_icon?: string
           mimo_name?: string
+          platform_commission?: number | null
           price?: number
           receiver_id?: string
           sender_id?: string
@@ -256,6 +298,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_commissions: {
+        Row: {
+          buyer_id: string
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          creator_id: string
+          gross_amount: number
+          id: string
+          source_id: string | null
+          source_type: string
+        }
+        Insert: {
+          buyer_id: string
+          commission_amount: number
+          commission_rate?: number
+          created_at?: string
+          creator_id: string
+          gross_amount: number
+          id?: string
+          source_id?: string | null
+          source_type: string
+        }
+        Update: {
+          buyer_id?: string
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          creator_id?: string
+          gross_amount?: number
+          id?: string
+          source_id?: string | null
+          source_type?: string
+        }
+        Relationships: []
       }
       private_messages: {
         Row: {
@@ -386,7 +464,9 @@ export type Database = {
         Row: {
           buyer_id: string
           created_at: string
+          creator_earnings: number | null
           id: string
+          platform_commission: number | null
           product_id: string | null
           product_price: number
           product_title: string
@@ -396,7 +476,9 @@ export type Database = {
         Insert: {
           buyer_id: string
           created_at?: string
+          creator_earnings?: number | null
           id?: string
+          platform_commission?: number | null
           product_id?: string | null
           product_price: number
           product_title: string
@@ -406,7 +488,9 @@ export type Database = {
         Update: {
           buyer_id?: string
           created_at?: string
+          creator_earnings?: number | null
           id?: string
+          platform_commission?: number | null
           product_id?: string | null
           product_price?: number
           product_title?: string
@@ -568,11 +652,102 @@ export type Database = {
           },
         ]
       }
+      subscription_packages: {
+        Row: {
+          created_at: string
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: number
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          slug?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean | null
+          package_id: string
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_active?: boolean | null
+          package_id: string
+          starts_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean | null
+          package_id?: string
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_commission: {
+        Args: { gross_amount: number }
+        Returns: {
+          creator_share: number
+          platform_share: number
+        }[]
+      }
+      process_monetized_transaction: {
+        Args: {
+          p_buyer_id: string
+          p_creator_id: string
+          p_gross_amount: number
+          p_source_id: string
+          p_source_type: string
+        }
+        Returns: {
+          creator_earnings: number
+          platform_commission: number
+        }[]
+      }
       update_balance: {
         Args: { amount: number; user_id: string }
         Returns: undefined

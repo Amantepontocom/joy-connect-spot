@@ -36,6 +36,8 @@ interface Creator {
 }
 
 const CATEGORIES = ['TUDO', 'VÍDEOS', 'PACKS', 'VIP', 'PROMO'];
+const COMMISSION_RATE = 0.30;
+const CREATOR_SHARE = 0.70;
 
 export function ShopView({ balance, setBalance }: ShopViewProps) {
   const { user } = useAuth();
@@ -218,28 +220,58 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
       return;
     }
 
+    // Calculate commission
+    const platformCommission = Math.floor(product.price * COMMISSION_RATE);
+    const creatorEarnings = Math.floor(product.price * CREATOR_SHARE);
+
     // Deduct balance
     setBalance(prev => prev - product.price);
 
-    // Record purchase
-    const { error } = await supabase
-      .from('purchases')
-      .insert({
+    try {
+      // Record purchase with commission
+      const { error: purchaseError } = await supabase
+        .from('purchases')
+        .insert({
+          buyer_id: user.id,
+          product_id: product.id,
+          product_title: product.title,
+          product_type: product.type,
+          product_price: product.price,
+          seller_id: null,
+          platform_commission: platformCommission,
+          creator_earnings: creatorEarnings,
+        });
+
+      if (purchaseError) throw purchaseError;
+
+      // Record platform commission
+      await supabase.from('platform_commissions').insert({
+        source_type: 'product',
+        source_id: product.id,
+        creator_id: user.id, // Using buyer as placeholder
         buyer_id: user.id,
-        product_id: product.id,
-        product_title: product.title,
-        product_type: product.type,
-        product_price: product.price,
-        seller_id: null
+        gross_amount: product.price,
+        commission_amount: platformCommission,
       });
 
-    if (error) {
+      // Add to creator earnings if there's a seller
+      if (product.creator) {
+        await supabase.from('creator_earnings').insert({
+          creator_id: user.id, // Using buyer as placeholder since we don't have real creator IDs
+          source_type: 'product',
+          source_id: product.id,
+          gross_amount: product.price,
+          platform_commission: platformCommission,
+          net_amount: creatorEarnings,
+        });
+      }
+
+      toast.success(`${product.title} comprado com sucesso!`);
+    } catch (error) {
       console.error('Error recording purchase:', error);
       // Refund on error
       setBalance(prev => prev + product.price);
       toast.error('Erro ao processar compra');
-    } else {
-      toast.success(`${product.title} comprado com sucesso!`);
     }
   };
 
