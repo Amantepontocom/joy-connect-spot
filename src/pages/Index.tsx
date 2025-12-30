@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Play, Radio, MessageCircle, ShoppingBag, MapPin, LogOut } from 'lucide-react';
+import { Heart, Play, Radio, MessageCircle, ShoppingBag, MapPin } from 'lucide-react';
 import { AppMode } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,13 +111,6 @@ const Index = () => {
                 alt="Profile" 
               />
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-online rounded-full border-2 border-background" />
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="p-2 rounded-full bg-secondary hover:bg-destructive/20 transition-colors"
-              title="Sair"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground hover:text-destructive" />
             </button>
           </div>
         </header>
