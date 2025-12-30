@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Heart, MessageCircle, Gift, X, Play, Music2, Pickaxe, Send, Plus, Upload, Video, Image, Eye, EyeOff } from 'lucide-react';
+import { Heart, MessageCircle, Gift, X, Play, Music2, Pickaxe, Send, Plus, Upload, Video, Image, Eye, EyeOff, Volume2, VolumeX } from 'lucide-react';
 import { MIMOS } from '@/lib/mockData';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,6 +50,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentReel, setCurrentReel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [likedReels, setLikedReels] = useState<Set<string>>(new Set());
   const [isFollowing, setIsFollowing] = useState(false);
   const [showMimos, setShowMimos] = useState(false);
@@ -83,13 +84,14 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
   // Video playback control
   useEffect(() => {
     if (videoRef.current) {
+      videoRef.current.muted = isMuted;
       if (isPlaying) {
         videoRef.current.play().catch(() => {});
       } else {
         videoRef.current.pause();
       }
     }
-  }, [isPlaying, currentReel]);
+  }, [isPlaying, currentReel, isMuted]);
 
   // Discrete Mode - charge every minute
   const reel = reels[currentReel];
@@ -618,7 +620,7 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
           poster={reel.thumbnail_url}
           className="absolute inset-0 w-full h-full object-cover"
           loop
-          muted
+          muted={isMuted}
           playsInline
           autoPlay
           onClick={() => setIsPlaying(!isPlaying)}
@@ -730,6 +732,22 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
             <Gift className="w-5 h-5 text-white" />
           </div>
           <span className="text-[10px] text-white font-semibold">MIMO</span>
+        </button>
+
+        {/* Mute/Unmute Button */}
+        <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1">
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+            isMuted 
+              ? 'bg-white/30 backdrop-blur-sm' 
+              : 'bg-white/10 backdrop-blur-sm border border-white/20'
+          }`}>
+            {isMuted ? (
+              <VolumeX className="w-5 h-5 text-white" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-white" />
+            )}
+          </div>
+          <span className="text-[10px] text-white font-semibold">{isMuted ? 'MUDO' : 'SOM'}</span>
         </button>
 
         {/* Discrete Mode Button */}
