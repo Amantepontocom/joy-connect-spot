@@ -192,6 +192,21 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
             const totalMsgs = Math.min(floatingMessages.length, 8);
             const opacity = 0.4 + (index / totalMsgs) * 0.6;
             const hasMimoOrCrisex = msg.hasMimo || msg.crisexAmount;
+            
+            // Get mimo animation and glow based on icon
+            const getMimoStyle = (icon?: string) => {
+              switch (icon) {
+                case '🌹': return { animation: 'animate-mimo-rose', glow: 'glow-rose', bg: 'bg-rose-500/20 border-rose-400/50' };
+                case '🥂': return { animation: 'animate-mimo-champagne', glow: 'glow-champagne', bg: 'bg-amber-500/20 border-amber-400/50' };
+                case '💎': return { animation: 'animate-mimo-diamond', glow: 'glow-diamond', bg: 'bg-cyan-400/20 border-cyan-300/50' };
+                case '💋': return { animation: 'animate-mimo-kiss', glow: 'glow-kiss', bg: 'bg-red-500/20 border-red-400/50' };
+                case '👑': return { animation: 'animate-mimo-crown', glow: 'glow-crown', bg: 'bg-yellow-500/20 border-yellow-400/50' };
+                default: return { animation: '', glow: '', bg: 'bg-primary/30 border-primary/40' };
+              }
+            };
+            
+            const mimoStyle = getMimoStyle(msg.mimoIcon);
+            
             return (
               <div 
                 key={msg.id} 
@@ -205,16 +220,20 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                   <img 
                     src={msg.avatar} 
                     alt={msg.username} 
-                    className={`rounded-full object-cover flex-shrink-0 mt-0.5 ${hasMimoOrCrisex ? 'w-9 h-9 ring-2 ring-primary shadow-glow' : 'w-7 h-7'}`} 
+                    className={`rounded-full object-cover flex-shrink-0 mt-0.5 ${hasMimoOrCrisex ? `w-9 h-9 ring-2 ring-primary ${mimoStyle.glow}` : 'w-7 h-7'}`} 
                   />
-                  <div className={`rounded-2xl px-3 py-2 backdrop-blur-md ${hasMimoOrCrisex ? 'bg-primary/30 border border-primary/40' : 'bg-black/40'}`}>
+                  <div className={`rounded-2xl px-3 py-2 backdrop-blur-md border ${hasMimoOrCrisex ? mimoStyle.bg : 'bg-black/40 border-transparent'}`}>
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className={`font-bold ${hasMimoOrCrisex ? 'text-sm text-primary' : 'text-[13px] text-foreground'} ${msg.isVip ? 'text-primary' : ''}`}>
                         {msg.username}
                       </span>
-                      {msg.mimoIcon && <span className={hasMimoOrCrisex ? 'text-xl' : 'text-base'}>{msg.mimoIcon}</span>}
+                      {msg.mimoIcon && (
+                        <span className={`${hasMimoOrCrisex ? 'text-2xl' : 'text-base'} ${mimoStyle.animation}`}>
+                          {msg.mimoIcon}
+                        </span>
+                      )}
                       {msg.crisexAmount && (
-                        <span className="text-xs font-semibold text-primary">+{msg.crisexAmount}</span>
+                        <span className="text-xs font-bold text-primary animate-pulse">+{msg.crisexAmount}</span>
                       )}
                     </div>
                     <p className={`${hasMimoOrCrisex ? 'text-sm text-primary/90 font-medium' : 'text-[13px] text-foreground/90'} break-words whitespace-pre-wrap leading-relaxed`}>
