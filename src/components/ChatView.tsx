@@ -1,10 +1,22 @@
 import { useState } from 'react';
-import { Send, Mic, Image, Smile, Phone, Video, MoreVertical, ArrowLeft, Crown } from 'lucide-react';
+import { Send, Mic, Image, Smile, Phone, Video, MoreVertical, ArrowLeft, Crown, Bot } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CONVERSATIONS } from '@/lib/mockData';
 
+type TabType = 'conversas' | 'sistema' | 'interacoes';
+
+const SYSTEM_MESSAGES = [
+  { id: 'sys1', name: 'Assistente Amantes.com', message: 'Olá! Como posso ajudar você hoje?', timestamp: 'Agora', avatar: '', isBot: true },
+];
+
+const INTERACTIONS = [
+  { id: 'int1', name: 'Maria enviou 🌹', message: 'Rosa para você!', timestamp: '5min', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50' },
+  { id: 'int2', name: 'João curtiu sua foto', message: 'Noite especial ✨', timestamp: '15min', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50' },
+];
+
 export function ChatView() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('conversas');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
     { id: '1', text: 'Oi amor! Como você está? 💕', isMe: false, time: '14:30' },
@@ -24,30 +36,138 @@ export function ChatView() {
   if (!selectedChat) {
     return (
       <div className="h-full flex flex-col bg-background">
-        <div className="px-4 py-4 border-b border-border">
-          <h2 className="text-2xl font-bold text-foreground">Mensagens</h2>
-          <p className="text-sm text-muted-foreground mt-1">Suas conversas</p>
-        </div>
-        <div className="flex-1 overflow-y-auto hide-scrollbar">
-          {CONVERSATIONS.map((conv, index) => (
-            <button key={conv.id} onClick={() => setSelectedChat(conv.id)} className="w-full flex items-center gap-4 px-4 py-4 hover:bg-secondary/50 transition-colors animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-              <div className="relative">
-                <img src={conv.image} alt={conv.name} className="w-14 h-14 rounded-full object-cover" />
-                {conv.isOnline && <div className="absolute bottom-0 right-0 w-4 h-4 bg-online rounded-full border-2 border-background" />}
-              </div>
-              <div className="flex-1 text-left">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-foreground">{conv.name}</span>
-                    <Crown className="w-4 h-4 text-gold fill-gold" />
-                  </div>
-                  <span className="text-xs text-muted-foreground">{conv.timestamp}</span>
-                </div>
-                <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
-              </div>
-              {conv.unread > 0 && <div className="w-6 h-6 gradient-primary rounded-full flex items-center justify-center"><span className="text-xs font-bold text-primary-foreground">{conv.unread}</span></div>}
+        {/* Tabs */}
+        <div className="px-4 pt-4 pb-0">
+          <div className="flex gap-6 border-b border-border">
+            <button
+              onClick={() => setActiveTab('conversas')}
+              className={`pb-3 text-sm font-semibold transition-colors relative ${
+                activeTab === 'conversas' 
+                  ? 'text-foreground' 
+                  : 'text-muted-foreground'
+              }`}
+            >
+              CONVERSAS
+              {activeTab === 'conversas' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+              )}
             </button>
-          ))}
+            <button
+              onClick={() => setActiveTab('sistema')}
+              className={`pb-3 text-sm font-semibold transition-colors relative ${
+                activeTab === 'sistema' 
+                  ? 'text-foreground' 
+                  : 'text-muted-foreground'
+              }`}
+            >
+              SISTEMA
+              {activeTab === 'sistema' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('interacoes')}
+              className={`pb-3 text-sm font-semibold transition-colors relative ${
+                activeTab === 'interacoes' 
+                  ? 'text-foreground' 
+                  : 'text-muted-foreground'
+              }`}
+            >
+              INTERAÇÕES
+              {activeTab === 'interacoes' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Content based on active tab */}
+        <div className="flex-1 overflow-y-auto hide-scrollbar">
+          {activeTab === 'conversas' && (
+            <>
+              {/* Bot Assistant */}
+              <button 
+                onClick={() => {}}
+                className="w-full flex items-center gap-4 px-4 py-4 hover:bg-secondary/50 transition-colors border-b border-border/50"
+              >
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-online rounded-full border-2 border-background" />
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="font-semibold text-foreground text-[15px]">Assistente Amantes.com</span>
+                    <span className="text-xs text-muted-foreground">Agora</span>
+                  </div>
+                  <p className="text-sm text-primary">Olá! Como posso ajudar você hoje?</p>
+                </div>
+              </button>
+
+              {/* Regular Conversations */}
+              {CONVERSATIONS.map((conv, index) => (
+                <button 
+                  key={conv.id} 
+                  onClick={() => setSelectedChat(conv.id)} 
+                  className="w-full flex items-center gap-4 px-4 py-4 hover:bg-secondary/50 transition-colors animate-fade-in border-b border-border/30" 
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="relative">
+                    <img src={conv.image} alt={conv.name} className="w-12 h-12 rounded-full object-cover" />
+                    {conv.isOnline && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-online rounded-full border-2 border-background" />}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-foreground text-[15px]">{conv.name}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{conv.timestamp}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
+                  </div>
+                  {conv.unread > 0 && (
+                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">{conv.unread}</span>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </>
+          )}
+
+          {activeTab === 'sistema' && (
+            <div className="p-4">
+              <button className="w-full flex items-center gap-4 px-4 py-4 hover:bg-secondary/50 transition-colors rounded-xl">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Bot className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-semibold text-foreground text-[15px]">Notificações do Sistema</span>
+                  <p className="text-sm text-muted-foreground">Sem novas notificações</p>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'interacoes' && (
+            <div className="divide-y divide-border/30">
+              {INTERACTIONS.map((item, index) => (
+                <div 
+                  key={item.id} 
+                  className="flex items-center gap-4 px-4 py-4 animate-fade-in"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <img src={item.avatar} alt={item.name} className="w-12 h-12 rounded-full object-cover" />
+                  <div className="flex-1">
+                    <span className="font-semibold text-foreground text-[15px]">{item.name}</span>
+                    <p className="text-sm text-muted-foreground">{item.message}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{item.timestamp}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
