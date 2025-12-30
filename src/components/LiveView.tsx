@@ -209,51 +209,49 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
     <div className="h-full w-full relative overflow-hidden bg-background">
       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-black/40" /></div>
 
-      {/* Category Filter - Fixed at very top alone */}
-      <div className="absolute top-0 left-0 right-0 z-50 safe-area-top">
-        <CategoryFilter 
-          selectedCategory={selectedCategory} 
-          onCategoryChange={setSelectedCategory}
-          className="px-3 py-2"
-        />
-      </div>
+      {/* Top Header Container */}
+      <div className="absolute top-0 left-0 right-0 z-50 safe-area-top flex flex-col gap-2 pt-2">
+        {/* Row 1: Categories only */}
+        <div className="px-3">
+          <CategoryFilter 
+            selectedCategory={selectedCategory} 
+            onCategoryChange={setSelectedCategory}
+          />
+        </div>
 
-      {/* Avatar/Viewers + Balance - Below categories */}
-      <div className="absolute top-10 left-0 right-0 z-40 px-3">
-        <div className="flex items-center justify-between">
-          {/* Left: Avatar + Viewers */}
+        {/* Row 2: Avatar/Viewers + Balance */}
+        <div className="flex items-center justify-between px-3">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <img src={currentStream?.streamerImage} alt={currentStream?.streamer} className="w-9 h-9 rounded-full object-cover ring-2 ring-primary" />
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+              <img src={currentStream?.streamerImage} alt={currentStream?.streamer} className="w-8 h-8 rounded-full object-cover ring-2 ring-primary" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
             </div>
             <span className="text-xs text-muted-foreground">{currentStream?.viewers.toLocaleString()} assistindo</span>
           </div>
 
-          {/* Right: Balance */}
-          <div className="px-2.5 py-1.5 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-1.5">
+          <div className="px-2.5 py-1 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-1.5">
             <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
             <span className="text-xs font-bold text-foreground">{balance.toLocaleString()}</span>
           </div>
         </div>
-      </div>
 
-      {/* Meta Progress Card */}
-      <div className="absolute top-[88px] left-0 right-0 z-30 px-3">
-        <div className="bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">Meta do Criador</span>
-            <span className="text-[11px] font-semibold text-primary">{metaProgress.toLocaleString()} / {metaGoal.toLocaleString()} CRISEX</span>
+        {/* Row 3: Meta Progress Card */}
+        <div className="px-3">
+          <div className="bg-card/80 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-border/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Meta do Criador</span>
+              <span className="text-[10px] font-semibold text-primary">{metaProgress.toLocaleString()} / {metaGoal.toLocaleString()} CRISEX</span>
+            </div>
+            <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
+              <div className="h-full bg-primary rounded-full transition-all duration-700 ease-out" style={{ width: `${progressPercent}%` }} />
+            </div>
+            <p className="text-[9px] text-muted-foreground mt-1.5 text-center font-medium">🎁 Meta: Show exclusivo ao vivo!</p>
           </div>
-          <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all duration-700 ease-out" style={{ width: `${progressPercent}%` }} />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-2 text-center font-medium">🎁 Meta: Show exclusivo ao vivo!</p>
         </div>
       </div>
 
       {/* Product Cards - Left Side */}
-      <div className="absolute left-2 top-40 z-20 flex flex-col gap-3">
+      <div className="absolute left-2 top-[140px] z-20 flex flex-col gap-3">
         {LIVE_PRODUCTS.map((product) => (
           <button
             key={product.id}
