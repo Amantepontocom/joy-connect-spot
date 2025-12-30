@@ -442,29 +442,27 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                   animationDelay: `${index * 50}ms`,
                 }}
               >
-                <div className={`flex items-start gap-2.5 ${hasMimoOrCrisex ? 'animate-scale-in' : ''}`}>
+                <div className={`flex items-center gap-2 ${hasMimoOrCrisex ? 'animate-scale-in' : ''}`}>
                   <img 
                     src={msg.avatar} 
                     alt={msg.username} 
-                    className={`rounded-full object-cover flex-shrink-0 mt-0.5 ${hasMimoOrCrisex ? `w-9 h-9 ring-2 ring-primary ${mimoStyle.glow}` : 'w-7 h-7'}`} 
+                    className={`rounded-full object-cover flex-shrink-0 ${hasMimoOrCrisex ? `w-7 h-7 ring-2 ring-primary ${mimoStyle.glow}` : 'w-6 h-6'}`} 
                   />
-                  <div className={`rounded-2xl px-3 py-2 backdrop-blur-md border ${hasMimoOrCrisex ? mimoStyle.bg : 'bg-black/40 border-transparent'}`}>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`font-bold ${hasMimoOrCrisex ? 'text-sm text-primary' : 'text-[13px] text-foreground'} ${msg.isVip ? 'text-primary' : ''}`}>
-                        {msg.username}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`font-bold ${hasMimoOrCrisex ? 'text-sm text-primary' : 'text-[13px] text-foreground'} ${msg.isVip ? 'text-primary' : ''}`}>
+                      {msg.username}
+                    </span>
+                    {msg.mimoIcon && (
+                      <span className={`${hasMimoOrCrisex ? 'text-xl' : 'text-base'} ${mimoStyle.animation}`}>
+                        {msg.mimoIcon}
                       </span>
-                      {msg.mimoIcon && (
-                        <span className={`${hasMimoOrCrisex ? 'text-2xl' : 'text-base'} ${mimoStyle.animation}`}>
-                          {msg.mimoIcon}
-                        </span>
-                      )}
-                      {msg.crisexAmount && (
-                        <span className="text-xs font-bold text-primary animate-pulse">+{msg.crisexAmount}</span>
-                      )}
-                    </div>
-                    <p className={`${hasMimoOrCrisex ? 'text-sm text-primary/90 font-medium' : 'text-[13px] text-foreground/90'} break-words whitespace-pre-wrap leading-relaxed`}>
+                    )}
+                    {msg.crisexAmount && (
+                      <span className="text-xs font-bold text-primary animate-pulse">+{msg.crisexAmount}</span>
+                    )}
+                    <span className={`${hasMimoOrCrisex ? 'text-sm text-foreground font-medium' : 'text-[13px] text-foreground/80'}`}>
                       {msg.message}
-                    </p>
+                    </span>
                   </div>
                 </div>
               </div>
