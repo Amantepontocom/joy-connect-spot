@@ -182,32 +182,45 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         ))}
       </div>
 
-      {/* Chat Messages - Left Side Extended */}
-      <div className="absolute left-2 bottom-16 z-20 w-48 max-h-[30vh]">
-        <div ref={messagesContainerRef} className="flex flex-col gap-1.5 justify-end overflow-hidden">
-          {floatingMessages.slice(-6).map((msg, index) => {
-            const totalMsgs = Math.min(floatingMessages.length, 6);
-            const opacity = 0.5 + (index / totalMsgs) * 0.5;
+      {/* Chat Messages - Left Side Extended - TikTok Live Style */}
+      <div className="absolute left-0 bottom-20 z-20 w-[85%] max-w-[340px] max-h-[35vh] pl-3">
+        <div 
+          ref={messagesContainerRef} 
+          className="flex flex-col gap-2.5 justify-end overflow-y-auto hide-scrollbar scroll-smooth"
+        >
+          {floatingMessages.slice(-8).map((msg, index) => {
+            const totalMsgs = Math.min(floatingMessages.length, 8);
+            const opacity = 0.4 + (index / totalMsgs) * 0.6;
             const hasMimoOrCrisex = msg.hasMimo || msg.crisexAmount;
             return (
               <div 
                 key={msg.id} 
-                className={`flex items-center gap-1.5 ${hasMimoOrCrisex ? 'animate-scale-in' : ''}`}
-                style={{ opacity }}
+                className="animate-fade-in"
+                style={{ 
+                  opacity,
+                  animationDelay: `${index * 50}ms`,
+                }}
               >
-                <img 
-                  src={msg.avatar} 
-                  alt={msg.username} 
-                  className={`rounded-full object-cover flex-shrink-0 ${hasMimoOrCrisex ? 'w-8 h-8 ring-2 ring-primary' : 'w-5 h-5'}`} 
-                />
-              <div className={`rounded-full px-2.5 py-1.5 backdrop-blur-md flex items-center gap-1.5 ${hasMimoOrCrisex ? 'bg-primary/40 py-2 px-3.5' : 'bg-card/50'}`}>
-                  <span className={`font-semibold truncate ${hasMimoOrCrisex ? 'text-xs max-w-[60px] text-primary' : 'text-[11px] max-w-[55px]'} ${msg.isVip ? 'text-primary' : hasMimoOrCrisex ? 'text-primary' : 'text-foreground'}`}>
-                    {msg.username}
-                  </span>
-                  {msg.mimoIcon && <span className={hasMimoOrCrisex ? 'text-lg' : 'text-sm'}>{msg.mimoIcon}</span>}
-                  <span className={`truncate ${hasMimoOrCrisex ? 'text-xs max-w-[80px] text-primary font-semibold' : 'text-[11px] max-w-[70px] text-foreground/80'}`}>
-                    {msg.message}
-                  </span>
+                <div className={`flex items-start gap-2.5 ${hasMimoOrCrisex ? 'animate-scale-in' : ''}`}>
+                  <img 
+                    src={msg.avatar} 
+                    alt={msg.username} 
+                    className={`rounded-full object-cover flex-shrink-0 mt-0.5 ${hasMimoOrCrisex ? 'w-9 h-9 ring-2 ring-primary shadow-glow' : 'w-7 h-7'}`} 
+                  />
+                  <div className={`rounded-2xl px-3 py-2 backdrop-blur-md ${hasMimoOrCrisex ? 'bg-primary/30 border border-primary/40' : 'bg-black/40'}`}>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`font-bold ${hasMimoOrCrisex ? 'text-sm text-primary' : 'text-[13px] text-foreground'} ${msg.isVip ? 'text-primary' : ''}`}>
+                        {msg.username}
+                      </span>
+                      {msg.mimoIcon && <span className={hasMimoOrCrisex ? 'text-xl' : 'text-base'}>{msg.mimoIcon}</span>}
+                      {msg.crisexAmount && (
+                        <span className="text-xs font-semibold text-primary">+{msg.crisexAmount}</span>
+                      )}
+                    </div>
+                    <p className={`${hasMimoOrCrisex ? 'text-sm text-primary/90 font-medium' : 'text-[13px] text-foreground/90'} break-words whitespace-pre-wrap leading-relaxed`}>
+                      {msg.message}
+                    </p>
+                  </div>
                 </div>
               </div>
             );
