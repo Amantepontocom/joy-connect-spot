@@ -94,6 +94,71 @@ export type Database = {
           },
         ]
       }
+      discrete_mode_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          creator_id: string
+          creator_share: number
+          id: string
+          live_id: string | null
+          platform_share: number
+          reel_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          creator_id: string
+          creator_share: number
+          id?: string
+          live_id?: string | null
+          platform_share: number
+          reel_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          creator_id?: string
+          creator_share?: number
+          id?: string
+          live_id?: string | null
+          platform_share?: number
+          reel_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discrete_mode_transactions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discrete_mode_transactions_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discrete_mode_transactions_reel_id_fkey"
+            columns: ["reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discrete_mode_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lives: {
         Row: {
           categories: string[] | null

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, Coins, Plus, Upload, Camera, Video as VideoIcon } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, EyeOff, Coins, Plus, Upload, Camera, Video as VideoIcon } from 'lucide-react';
 import { LIVE_STREAMS, MIMOS } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
 import { playMimoSound, initAudioContext } from '@/lib/mimoSounds';
@@ -7,6 +7,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { CategoryFilter, CategorySelector, CategoryId } from '@/components/CategoryFilter';
 import crisexToken from '@/assets/crisex-token.png';
+
+const DISCRETE_MODE_COST_PER_MINUTE = 10;
+const CREATOR_SHARE_PERCENT = 70;
+const PLATFORM_SHARE_PERCENT = 30;
 
 interface LiveViewProps {
   balance: number;
@@ -70,8 +74,111 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
   const [creating, setCreating] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
+  // Discrete Mode states
+  const [discreteMode, setDiscreteMode] = useState(false);
+  const [discreteModeTimer, setDiscreteModeTimer] = useState<NodeJS.Timeout | null>(null);
+  const [discreteModeSeconds, setDiscreteModeSeconds] = useState(0);
+
   const currentStream = LIVE_STREAMS[0];
   const metaGoal = 5000;
+
+  // Discrete Mode - charge every minute
+  const chargeDiscreteMode = useCallback(async () => {
+    if (balance < DISCRETE_MODE_COST_PER_MINUTE) {
+      // Insufficient balance - disable discrete mode
+      setDiscreteMode(false);
+      if (discreteModeTimer) {
+        clearInterval(discreteModeTimer);
+        setDiscreteModeTimer(null);
+      }
+      toast({
+        title: "Saldo insuficiente",
+        description: "Modo Discreto desativado por falta de CRISEX.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Charge user
+    setBalance(prev => prev - DISCRETE_MODE_COST_PER_MINUTE);
+
+    // Calculate shares
+    const creatorShare = Math.floor(DISCRETE_MODE_COST_PER_MINUTE * CREATOR_SHARE_PERCENT / 100);
+    const platformShare = DISCRETE_MODE_COST_PER_MINUTE - creatorShare;
+
+    // Record transaction in database
+    if (user && currentStream) {
+      try {
+        await supabase.from('discrete_mode_transactions').insert({
+          user_id: user.id,
+          creator_id: user.id, // Using current user as placeholder since mock data doesn't have real streamer IDs
+          amount: DISCRETE_MODE_COST_PER_MINUTE,
+          creator_share: creatorShare,
+          platform_share: platformShare,
+        });
+      } catch (error) {
+        console.error('Error recording discrete mode transaction:', error);
+      }
+    }
+  }, [balance, user, currentStream, discreteModeTimer, setBalance]);
+
+  // Toggle discrete mode
+  const toggleDiscreteMode = useCallback(() => {
+    if (!discreteMode) {
+      // Activating - check balance first
+      if (balance < DISCRETE_MODE_COST_PER_MINUTE) {
+        toast({
+          title: "Saldo insuficiente",
+          description: `Você precisa de pelo menos ${DISCRETE_MODE_COST_PER_MINUTE} CRISEX para ativar o Modo Discreto.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDiscreteMode(true);
+      setDiscreteModeSeconds(0);
+      
+      // Start timer - charge every 60 seconds
+      const timer = setInterval(() => {
+        setDiscreteModeSeconds(prev => prev + 1);
+      }, 1000);
+      setDiscreteModeTimer(timer);
+
+      toast({
+        title: "Modo Discreto ativado",
+        description: "Cobrança de 10 CRISEX por minuto.",
+      });
+    } else {
+      // Deactivating
+      setDiscreteMode(false);
+      if (discreteModeTimer) {
+        clearInterval(discreteModeTimer);
+        setDiscreteModeTimer(null);
+      }
+      setDiscreteModeSeconds(0);
+
+      toast({
+        title: "Modo Discreto desativado",
+        description: "Interface restaurada.",
+      });
+    }
+  }, [discreteMode, discreteModeTimer, balance]);
+
+  // Effect to charge every minute
+  useEffect(() => {
+    if (discreteMode && discreteModeSeconds > 0 && discreteModeSeconds % 60 === 0) {
+      chargeDiscreteMode();
+    }
+  }, [discreteModeSeconds, discreteMode, chargeDiscreteMode]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (discreteModeTimer) {
+        clearInterval(discreteModeTimer);
+      }
+    };
+  }, [discreteModeTimer]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -209,46 +316,76 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
     <div className="h-full w-full relative overflow-hidden bg-background">
       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${currentStream?.thumbnail})` }}><div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-black/40" /></div>
 
-      {/* Top Header Container */}
-      <div className="absolute top-0 left-0 right-0 z-50 safe-area-top flex flex-col gap-2 pt-2">
-        {/* Row 1: Categories only */}
-        <div className="px-3">
-          <CategoryFilter 
-            selectedCategory={selectedCategory} 
-            onCategoryChange={setSelectedCategory}
-          />
+      {/* Discrete Mode Button - Always visible */}
+      <button
+        onClick={toggleDiscreteMode}
+        className={`absolute top-3 right-3 z-[60] w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+          discreteMode 
+            ? 'bg-primary shadow-glow' 
+            : 'bg-card/60 backdrop-blur-sm border border-border/30'
+        }`}
+      >
+        {discreteMode ? (
+          <EyeOff className="w-5 h-5 text-primary-foreground" />
+        ) : (
+          <Eye className="w-5 h-5 text-foreground" />
+        )}
+      </button>
+
+      {/* Discrete Mode Timer Display */}
+      {discreteMode && (
+        <div className="absolute top-14 right-3 z-[60] px-2 py-1 bg-card/80 backdrop-blur-sm rounded-full">
+          <span className="text-[10px] font-medium text-muted-foreground">
+            {Math.floor(discreteModeSeconds / 60)}:{(discreteModeSeconds % 60).toString().padStart(2, '0')}
+          </span>
         </div>
+      )}
 
-        {/* Row 2: Avatar/Viewers + Balance */}
-        <div className="flex items-center justify-between px-3">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <img src={currentStream?.streamerImage} alt={currentStream?.streamer} className="w-8 h-8 rounded-full object-cover ring-2 ring-primary" />
-              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
-            </div>
-            <span className="text-xs text-muted-foreground">{currentStream?.viewers.toLocaleString()} assistindo</span>
-          </div>
-
-          <div className="px-2.5 py-1 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-1.5">
-            <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
-            <span className="text-xs font-bold text-foreground">{balance.toLocaleString()}</span>
-          </div>
-        </div>
-
-        {/* Row 3: Meta Progress Card - Compact */}
-        <div className="px-3">
-          <div className={`bg-card/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-border/20 flex items-center gap-3 ${progressPercent >= 80 ? 'animate-pulse-glow' : ''}`}>
-            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap">Meta</span>
-            <div className="flex-1 h-1.5 bg-muted/50 rounded-full overflow-hidden">
-              <div 
-                className={`h-full bg-primary rounded-full transition-all duration-700 ease-out ${progressPercent >= 80 ? 'bg-gradient-to-r from-primary via-primary-foreground/30 to-primary bg-[length:200%_100%] animate-shimmer' : ''}`} 
-                style={{ width: `${progressPercent}%` }} 
+      {/* All UI hidden when discrete mode is active */}
+      {!discreteMode && (
+        <>
+          {/* Top Header Container */}
+          <div className="absolute top-0 left-0 right-0 z-50 safe-area-top flex flex-col gap-2 pt-2">
+            {/* Row 1: Categories only */}
+            <div className="px-3">
+              <CategoryFilter 
+                selectedCategory={selectedCategory} 
+                onCategoryChange={setSelectedCategory}
               />
             </div>
-            <span className={`text-[9px] font-semibold whitespace-nowrap ${progressPercent >= 80 ? 'text-primary animate-pulse' : 'text-primary'}`}>{metaProgress.toLocaleString()}/{metaGoal.toLocaleString()}</span>
+
+            {/* Row 2: Avatar/Viewers + Balance + Discrete Mode */}
+            <div className="flex items-center justify-between px-3">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <img src={currentStream?.streamerImage} alt={currentStream?.streamer} className="w-8 h-8 rounded-full object-cover ring-2 ring-primary" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
+                </div>
+                <span className="text-xs text-muted-foreground">{currentStream?.viewers.toLocaleString()} assistindo</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="px-2.5 py-1 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-1.5">
+                  <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
+                  <span className="text-xs font-bold text-foreground">{balance.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Meta Progress Card - Compact */}
+            <div className="px-3">
+              <div className={`bg-card/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-border/20 flex items-center gap-3 ${progressPercent >= 80 ? 'animate-pulse-glow' : ''}`}>
+                <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap">Meta</span>
+                <div className="flex-1 h-1.5 bg-muted/50 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full bg-primary rounded-full transition-all duration-700 ease-out ${progressPercent >= 80 ? 'bg-gradient-to-r from-primary via-primary-foreground/30 to-primary bg-[length:200%_100%] animate-shimmer' : ''}`} 
+                    style={{ width: `${progressPercent}%` }} 
+                  />
+                </div>
+                <span className={`text-[9px] font-semibold whitespace-nowrap ${progressPercent >= 80 ? 'text-primary animate-pulse' : 'text-primary'}`}>{metaProgress.toLocaleString()}/{metaGoal.toLocaleString()}</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
       {/* Product Cards - Left Side */}
       <div className="absolute left-2 top-[130px] z-20 flex flex-col gap-3">
@@ -387,6 +524,8 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {showMimos && (
         <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowMimos(false)}>
