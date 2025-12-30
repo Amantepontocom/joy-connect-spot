@@ -371,19 +371,20 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
 
       {!isPlaying && (<button onClick={() => { setIsPlaying(true); initAudioContext(); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center shadow-glow animate-pulse-slow"><Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" /></div><p className="text-center text-sm font-semibold text-foreground mt-3 tracking-wide">ENTRAR NA LIVE</p></button>)}
 
+      {/* Create Live Button - Bottom Right */}
+      <button 
+        onClick={() => setShowCreateModal(true)} 
+        className="absolute bottom-24 right-3 z-40 w-12 h-12 bg-destructive rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg"
+      >
+        <VideoIcon className="w-6 h-6 text-destructive-foreground" />
+      </button>
+
       <div className="absolute bottom-0 left-0 right-0 z-30 p-3 bg-gradient-to-t from-background via-background/80 to-transparent pt-8">
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
             <input type="text" placeholder="Envie uma mensagem..." value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} className="w-full h-11 pl-4 pr-12 bg-card/50 backdrop-blur-sm rounded-full text-sm text-foreground placeholder:text-muted-foreground border border-border/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50" />
             <button onClick={handleSendMessage} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 gradient-primary rounded-full flex items-center justify-center"><Send className="w-4 h-4 text-primary-foreground" /></button>
           </div>
-          {/* Create Live Button */}
-          <button 
-            onClick={() => setShowCreateModal(true)} 
-            className="w-11 h-11 bg-destructive rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg"
-          >
-            <VideoIcon className="w-5 h-5 text-destructive-foreground" />
-          </button>
         </div>
       </div>
 
