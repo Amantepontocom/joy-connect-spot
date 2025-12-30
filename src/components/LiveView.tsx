@@ -71,6 +71,64 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         </div>
       </div>
 
+      {/* Product Cards - Left Side */}
+      <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+        {/* Product Card 1 */}
+        <div className="w-20 bg-card/90 backdrop-blur-sm rounded-xl overflow-hidden border border-border/30 shadow-lg">
+          <div className="relative">
+            <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 py-0.5 px-1.5">
+              <p className="text-[7px] font-bold text-primary-foreground uppercase tracking-wide text-center">Comprar</p>
+              <p className="text-[8px] font-extrabold text-primary-foreground uppercase text-center">Novidades</p>
+            </div>
+            <div className="aspect-[3/4] bg-muted/50">
+              <img 
+                src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200" 
+                alt="Pack" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          <div className="p-1.5 bg-card">
+            <p className="text-[8px] font-semibold text-foreground truncate">PACK VERÃO ...</p>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-[9px] font-bold text-primary">450</span>
+              <span className="text-[6px] bg-primary/20 text-primary px-1 py-0.5 rounded font-bold">VIP</span>
+            </div>
+            <button className="w-full mt-1 py-1 bg-primary rounded text-[7px] font-bold text-primary-foreground uppercase tracking-wide hover:bg-primary/90 transition-colors">
+              Comprar
+            </button>
+          </div>
+        </div>
+
+        {/* Product Card 2 */}
+        <div className="w-20 bg-card/90 backdrop-blur-sm rounded-xl overflow-hidden border border-border/30 shadow-lg">
+          <div className="relative">
+            <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 py-0.5 px-1.5">
+              <p className="text-[7px] font-bold text-primary-foreground uppercase tracking-wide text-center">Vídeo</p>
+              <p className="text-[8px] font-extrabold text-primary-foreground uppercase text-center">Privado</p>
+            </div>
+            <div className="aspect-[3/4] bg-muted/50">
+              <img 
+                src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200" 
+                alt="Video Privado" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          <div className="p-1.5 bg-card">
+            <p className="text-[8px] font-semibold text-foreground truncate">VÍDEO HOT ...</p>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-[9px] font-bold text-primary">800</span>
+              <span className="text-[6px] bg-primary/20 text-primary px-1 py-0.5 rounded font-bold">🔒</span>
+            </div>
+            <button className="w-full mt-1 py-1 bg-primary rounded text-[7px] font-bold text-primary-foreground uppercase tracking-wide hover:bg-primary/90 transition-colors">
+              Comprar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Chat Messages - Below Product Cards */}
       <div className="absolute left-2 bottom-16 z-20 w-36">
         <div ref={messagesContainerRef} className="flex flex-col gap-1 overflow-hidden">
           {floatingMessages.slice(-3).map((msg, index) => (
