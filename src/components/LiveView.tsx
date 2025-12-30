@@ -59,10 +59,15 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
           </div>
           <div className="flex items-center gap-2"><div className="px-3 py-1.5 bg-card/60 backdrop-blur-sm rounded-full flex items-center gap-2"><span className="text-sm">💎</span><span className="text-sm font-bold text-foreground">{balance.toLocaleString()}</span></div></div>
         </div>
-        <div className="glass rounded-xl p-3">
-          <div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold text-foreground tracking-wide">META DO CRIADOR</span><span className="text-xs font-bold text-primary">{metaProgress.toLocaleString()} / {metaGoal.toLocaleString()} CRISEX</span></div>
-          <div className="h-3 bg-secondary rounded-full overflow-hidden relative"><div className="h-full gradient-primary transition-all duration-700 ease-out relative" style={{ width: `${progressPercent}%` }}><div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" /></div></div>
-          <p className="text-[10px] text-muted-foreground mt-1.5 text-center">🎁 Meta: Show exclusivo ao vivo!</p>
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/20">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">Meta do Criador</span>
+            <span className="text-[11px] font-semibold text-primary">{metaProgress.toLocaleString()} / {metaGoal.toLocaleString()} CRISEX</span>
+          </div>
+          <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full transition-all duration-700 ease-out" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2 text-center font-medium">🎁 Meta: Show exclusivo ao vivo!</p>
         </div>
       </div>
 
