@@ -32,7 +32,7 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
   }, [selectedCategory]);
 
   return (
-    <div className={cn("w-full bg-black/95 backdrop-blur-md", className)}>
+    <div className={cn("w-full", className)}>
       <div 
         ref={containerRef}
         className="flex items-center gap-1 px-3 py-2 overflow-x-auto hide-scrollbar"
