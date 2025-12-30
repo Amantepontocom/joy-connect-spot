@@ -237,12 +237,15 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
 
         {/* Row 3: Meta Progress Card - Compact */}
         <div className="px-3">
-          <div className="bg-card/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-border/20 flex items-center gap-3">
+          <div className={`bg-card/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-border/20 flex items-center gap-3 ${progressPercent >= 80 ? 'animate-pulse-glow' : ''}`}>
             <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap">Meta</span>
             <div className="flex-1 h-1.5 bg-muted/50 rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all duration-700 ease-out" style={{ width: `${progressPercent}%` }} />
+              <div 
+                className={`h-full bg-primary rounded-full transition-all duration-700 ease-out ${progressPercent >= 80 ? 'bg-gradient-to-r from-primary via-primary-foreground/30 to-primary bg-[length:200%_100%] animate-shimmer' : ''}`} 
+                style={{ width: `${progressPercent}%` }} 
+              />
             </div>
-            <span className="text-[9px] font-semibold text-primary whitespace-nowrap">{metaProgress.toLocaleString()}/{metaGoal.toLocaleString()}</span>
+            <span className={`text-[9px] font-semibold whitespace-nowrap ${progressPercent >= 80 ? 'text-primary animate-pulse' : 'text-primary'}`}>{metaProgress.toLocaleString()}/{metaGoal.toLocaleString()}</span>
           </div>
         </div>
       </div>
