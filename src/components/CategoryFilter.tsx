@@ -32,10 +32,10 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
   }, [selectedCategory]);
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full py-2 px-2", className)}>
       <div 
         ref={containerRef}
-        className="flex items-center gap-1 overflow-x-auto hide-scrollbar"
+        className="flex items-center gap-1 overflow-x-auto hide-scrollbar bg-black/40 backdrop-blur-md rounded-full px-2 py-1.5 shadow-lg"
       >
         {CATEGORIES.map((category) => {
           const isSelected = selectedCategory === category.id;
@@ -45,10 +45,10 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
               ref={isSelected ? selectedRef : null}
               onClick={() => onCategoryChange(category.id)}
               className={cn(
-                "flex-shrink-0 px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-all duration-200 whitespace-nowrap",
+                "flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all duration-200 whitespace-nowrap",
                 isSelected
-                  ? "bg-transparent border border-primary text-primary"
-                  : "bg-transparent border border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-primary/20 border border-primary text-primary shadow-[0_0_10px_rgba(236,72,153,0.3)]"
+                  : "bg-transparent border border-transparent text-white/70 hover:text-white"
               )}
             >
               {category.label}
