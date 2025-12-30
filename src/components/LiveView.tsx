@@ -339,13 +339,9 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
               />
             </div>
 
-            {/* Row 2: Avatar/Viewers + Balance + Discrete Mode */}
+            {/* Row 2: Viewers + Balance */}
             <div className="flex items-center justify-between px-3">
               <div className="flex items-center gap-2">
-                <div className="relative">
-                  <img src={currentStream?.streamerImage} alt={currentStream?.streamer} className="w-8 h-8 rounded-full object-cover ring-2 ring-primary" />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
-                </div>
                 <span className="text-xs text-muted-foreground">{currentStream?.viewers.toLocaleString()} assistindo</span>
               </div>
 
@@ -472,7 +468,22 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       </div>
 
       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 z-30">
-        <button onClick={() => setIsFollowing(!isFollowing)} className="flex flex-col items-center gap-1 group"><div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${isFollowing ? 'gradient-primary' : 'bg-card/50 backdrop-blur-sm border border-border/30'}`}><UserPlus className={`w-5 h-5 ${isFollowing ? 'text-primary-foreground' : 'text-foreground'}`} /></div><span className="text-[10px] text-foreground font-medium">Seguir</span></button>
+        {/* Profile Avatar with Follow */}
+        <button onClick={() => setIsFollowing(!isFollowing)} className="relative flex flex-col items-center">
+          <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500">
+            <img 
+              src={currentStream?.streamerImage} 
+              alt={currentStream?.streamer} 
+              className="w-full h-full rounded-full object-cover border-2 border-black" 
+            />
+          </div>
+          {/* Follow badge */}
+          {!isFollowing && (
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-black">
+              <Plus className="w-3 h-3 text-white" />
+            </div>
+          )}
+        </button>
         <button onClick={() => setIsLiked(!isLiked)} className="flex flex-col items-center gap-1"><div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${isLiked ? 'bg-primary/20' : 'bg-card/50 backdrop-blur-sm border border-border/30'}`}><Heart className={`w-6 h-6 transition-all ${isLiked ? 'text-primary fill-primary animate-heart' : 'text-foreground'}`} /></div><span className="text-[10px] text-foreground font-medium">12.4K</span></button>
         <button onClick={() => setShowHistoryModal(true)} className="flex flex-col items-center gap-1 relative">
           <div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-border/30 rounded-full flex items-center justify-center active:scale-90 transition-all">
