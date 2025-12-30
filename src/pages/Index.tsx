@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Play, Radio, MessageCircle, ShoppingBag, MapPin, TrendingUp } from 'lucide-react';
+import { Heart, Play, Radio, MessageCircle, ShoppingBag, MapPin } from 'lucide-react';
 import { AppMode } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,13 +98,6 @@ const Index = () => {
             <span className="text-xl font-bold text-gradient">Amantes.com</span>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMode(AppMode.MONETIZATION)}
-              className="p-2 bg-secondary rounded-full active:scale-95 transition-transform"
-              title="Monetização"
-            >
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-            </button>
             <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-full animate-fade-in">
               <img src={crisexToken} alt="CRISEX" className="w-5 h-5" />
               <span className="text-sm font-bold text-foreground">{localBalance.toLocaleString()}</span>
