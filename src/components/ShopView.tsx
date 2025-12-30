@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Images, Crown, Plus } from 'lucide-react';
+import { Play, Images, Plus, X, ChevronLeft, ChevronRight, Heart, Share2, ShoppingBag } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -42,6 +42,19 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
   const [featuredCreators, setFeaturedCreators] = useState<Creator[]>([]);
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Mock gallery images for product detail
+  const getProductGallery = (product: Product) => {
+    const baseImages = [
+      product.image_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800',
+    ];
+    return baseImages;
+  };
 
   // Fetch products and creators from database
   useEffect(() => {
@@ -233,7 +246,8 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
             {filteredProducts.map((product) => (
               <div 
                 key={product.id} 
-                className="bg-card rounded-2xl overflow-hidden border border-border"
+                className="bg-card rounded-2xl overflow-hidden border border-border cursor-pointer active:scale-[0.98] transition-transform"
+                onClick={() => { setSelectedProduct(product); setCurrentImageIndex(0); }}
               >
                 {/* Product Image */}
                 <div className="relative aspect-[4/5]">
@@ -281,7 +295,7 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
                       <img src={crisexToken} alt="CRISEX" className="w-3 h-3" />
                     </div>
                     <button 
-                      onClick={() => handleBuy(product)}
+                      onClick={(e) => { e.stopPropagation(); handleBuy(product); }}
                       className="flex items-center gap-0.5 px-2.5 py-1 gradient-primary rounded-full text-[10px] font-semibold text-white active:scale-95 transition-transform"
                     >
                       BUY <Plus className="w-2.5 h-2.5" />
@@ -300,6 +314,121 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
             <h3 className="text-base font-bold text-foreground italic">Compre Individualmente</h3>
           </div>
         </div>
+
+        {/* Product Detail Modal */}
+        {selectedProduct && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={() => setSelectedProduct(null)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div 
+              className="relative w-full max-w-lg max-h-[90vh] bg-card rounded-t-3xl sm:rounded-3xl overflow-hidden animate-slide-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button 
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 z-20 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+
+              {/* Image Gallery */}
+              <div className="relative aspect-[4/5] bg-black">
+                <img 
+                  src={getProductGallery(selectedProduct)[currentImageIndex]} 
+                  alt={selectedProduct.title}
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Gallery navigation */}
+                {getProductGallery(selectedProduct).length > 1 && (
+                  <>
+                    <button 
+                      onClick={() => setCurrentImageIndex(prev => prev > 0 ? prev - 1 : getProductGallery(selectedProduct).length - 1)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-white" />
+                    </button>
+                    <button 
+                      onClick={() => setCurrentImageIndex(prev => prev < getProductGallery(selectedProduct).length - 1 ? prev + 1 : 0)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center"
+                    >
+                      <ChevronRight className="w-5 h-5 text-white" />
+                    </button>
+                  </>
+                )}
+
+                {/* Image indicators */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {getProductGallery(selectedProduct).map((_, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Badge */}
+                {selectedProduct.badge && (
+                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold ${getBadgeStyle(selectedProduct.badge)}`}>
+                    {selectedProduct.badge}
+                  </div>
+                )}
+              </div>
+
+              {/* Product Info */}
+              <div className="p-4">
+                {/* Creator info */}
+                <div className="flex items-center gap-2 mb-3">
+                  <img 
+                    src={selectedProduct.creator?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} 
+                    alt="" 
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">
+                      {selectedProduct.creator?.display_name || selectedProduct.creator?.username || 'Creator'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      @{selectedProduct.creator?.username || 'usuario'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Title and description */}
+                <h3 className="text-lg font-bold text-foreground mb-1">{selectedProduct.title}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {selectedProduct.description || 'Conteúdo exclusivo disponível para compra imediata.'}
+                </p>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3 mb-4">
+                  <button className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                    <Heart className="w-5 h-5 text-foreground" />
+                  </button>
+                  <button className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                    <Share2 className="w-5 h-5 text-foreground" />
+                  </button>
+                </div>
+
+                {/* Price and Buy */}
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-foreground">{selectedProduct.price}</span>
+                    <img src={crisexToken} alt="CRISEX" className="w-5 h-5" />
+                  </div>
+                  <button 
+                    onClick={() => { handleBuy(selectedProduct); setSelectedProduct(null); }}
+                    className="flex items-center gap-2 px-6 py-3 gradient-primary rounded-full text-sm font-bold text-white active:scale-95 transition-transform"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    COMPRAR AGORA
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ScrollArea>
   );
