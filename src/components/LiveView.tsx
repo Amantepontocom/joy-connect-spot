@@ -146,19 +146,19 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
       </div>
 
       {/* Product Cards - Left Side */}
-      <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+      <div className="absolute left-2 top-[30%] -translate-y-1/2 z-20 flex flex-col gap-3">
         {LIVE_PRODUCTS.map((product) => (
           <button
             key={product.id}
             onClick={() => openProductModal(product)}
-            className="w-20 bg-card/90 backdrop-blur-sm rounded-xl overflow-hidden border border-border/30 shadow-lg hover:scale-105 transition-transform active:scale-95"
+            className="w-24 bg-card/95 backdrop-blur-sm rounded-xl overflow-hidden border border-border/30 shadow-lg hover:scale-105 transition-transform active:scale-95"
           >
             <div className="relative">
-              <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 py-0.5 px-1.5 z-10">
-                <p className="text-[7px] font-bold text-primary-foreground uppercase tracking-wide text-center">
+              <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/80 py-1 px-2 z-10">
+                <p className="text-[8px] font-bold text-primary-foreground uppercase tracking-wide text-center">
                   {product.type === 'pack' ? 'Comprar' : 'Vídeo'}
                 </p>
-                <p className="text-[8px] font-extrabold text-primary-foreground uppercase text-center">
+                <p className="text-[9px] font-extrabold text-primary-foreground uppercase text-center">
                   {product.type === 'pack' ? 'Novidades' : 'Privado'}
                 </p>
               </div>
@@ -166,13 +166,13 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
                 <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
               </div>
             </div>
-            <div className="p-1.5 bg-card text-left">
-              <p className="text-[8px] font-semibold text-foreground truncate">{product.title}</p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-[9px] font-bold text-primary">{product.price}</span>
-                <span className="text-[6px] bg-primary/20 text-primary px-1 py-0.5 rounded font-bold">{product.badge}</span>
+            <div className="p-2 bg-card text-center">
+              <p className="text-[9px] font-semibold text-foreground truncate">{product.title}</p>
+              <div className="flex items-center justify-center gap-1.5 mt-1">
+                <span className="text-[11px] font-bold text-green-500">{product.price}</span>
+                <span className="text-[7px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-bold">{product.badge}</span>
               </div>
-              <div className="w-full mt-1 py-1 bg-primary rounded text-[7px] font-bold text-primary-foreground uppercase tracking-wide">
+              <div className="w-full mt-1.5 py-1.5 bg-primary rounded-lg text-[8px] font-bold text-primary-foreground uppercase tracking-wide text-center">
                 Comprar
               </div>
             </div>
