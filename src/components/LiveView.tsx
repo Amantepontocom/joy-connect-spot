@@ -235,23 +235,20 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
           </div>
         </div>
 
-        {/* Row 3: Meta Progress Card */}
+        {/* Row 3: Meta Progress Card - Compact */}
         <div className="px-3">
-          <div className="bg-card/80 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-border/20">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Meta do Criador</span>
-              <span className="text-[10px] font-semibold text-primary">{metaProgress.toLocaleString()} / {metaGoal.toLocaleString()} CRISEX</span>
-            </div>
-            <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
+          <div className="bg-card/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-border/20 flex items-center gap-3">
+            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap">Meta</span>
+            <div className="flex-1 h-1.5 bg-muted/50 rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all duration-700 ease-out" style={{ width: `${progressPercent}%` }} />
             </div>
-            <p className="text-[9px] text-muted-foreground mt-1.5 text-center font-medium">🎁 Meta: Show exclusivo ao vivo!</p>
+            <span className="text-[9px] font-semibold text-primary whitespace-nowrap">{metaProgress.toLocaleString()}/{metaGoal.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {/* Product Cards - Left Side */}
-      <div className="absolute left-2 top-[140px] z-20 flex flex-col gap-3">
+      <div className="absolute left-2 top-[120px] z-20 flex flex-col gap-3">
         {LIVE_PRODUCTS.map((product) => (
           <button
             key={product.id}
