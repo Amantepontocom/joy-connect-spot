@@ -1,98 +1,340 @@
-import { useState } from 'react';
-import { Search, Star, ShoppingBag, TrendingUp, Crown } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { SHOP_ITEMS } from '@/lib/mockData';
+import { useState, useEffect } from 'react';
+import { Play, Images, Crown, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import crisexToken from '@/assets/crisex-token.png';
+import { toast } from 'sonner';
 
 interface ShopViewProps {
   balance: number;
   setBalance: (updater: (prev: number) => number) => void;
 }
 
-const CATEGORIES = ['Todos', 'Pacotes', 'Moedas', 'Assinaturas', 'Mimos'];
+interface Product {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  type: string;
+  badge: string | null;
+  image_url: string | null;
+  creator: {
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
 
-export function ShopView({ balance }: ShopViewProps) {
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [searchQuery, setSearchQuery] = useState('');
+interface Creator {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+}
 
-  const filteredItems = SHOP_ITEMS.filter(item => {
-    const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+const CATEGORIES = ['TUDO', 'VÍDEOS', 'PACKS', 'VIP', 'PROMO'];
+
+// Mock featured creators for UI
+const FEATURED_CREATORS: Creator[] = [
+  { id: '1', username: 'maria', display_name: 'Maria', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
+  { id: '2', username: 'julia', display_name: 'Julia', avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
+  { id: '3', username: 'ana', display_name: 'Ana', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100' },
+  { id: '4', username: 'bianca', display_name: 'Bianca', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100' },
+  { id: '5', username: 'carla', display_name: 'Carla', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' },
+];
+
+// Mock products for UI
+const MOCK_PRODUCTS: Product[] = [
+  {
+    id: '1',
+    title: 'Ensaio Urban Chic',
+    description: '15 fotos exclusivas',
+    price: 450,
+    type: 'pack',
+    badge: 'PACK',
+    image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+    creator: { username: 'mariaduarda', display_name: 'Maria Duarda', avatar_url: null }
+  },
+  {
+    id: '2',
+    title: 'Bastidores da Live',
+    description: 'Vídeo de 05:20',
+    price: 300,
+    type: 'video',
+    badge: 'VIDEO',
+    image_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400',
+    creator: { username: 'ana_clara', display_name: 'Ana Clara', avatar_url: null }
+  },
+  {
+    id: '3',
+    title: 'VIP Access 30 Days',
+    description: 'Acesso completo',
+    price: 2500,
+    type: 'vip',
+    badge: 'VIP',
+    image_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400',
+    creator: { username: 'juliasilva', display_name: 'Julia Silva', avatar_url: null }
+  },
+  {
+    id: '4',
+    title: 'Sessão Golden Hour',
+    description: '22 fotos',
+    price: 600,
+    type: 'pack',
+    badge: 'PACK',
+    image_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+    creator: { username: 'bianca_hot', display_name: 'Bianca', avatar_url: null }
+  },
+];
+
+export function ShopView({ balance, setBalance }: ShopViewProps) {
+  const { user } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState('TUDO');
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
+
+  // Fetch products from database
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          creator:profiles!products_creator_id_fkey(username, display_name, avatar_url)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching products:', error);
+      } else if (data && data.length > 0) {
+        setProducts(data);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = products.filter(product => {
+    if (selectedCategory === 'TUDO') return true;
+    if (selectedCategory === 'VÍDEOS') return product.type === 'video';
+    if (selectedCategory === 'PACKS') return product.type === 'pack';
+    if (selectedCategory === 'VIP') return product.type === 'vip';
+    if (selectedCategory === 'PROMO') return product.badge === 'PROMO';
+    return true;
   });
 
+  const handleBuy = async (product: Product) => {
+    if (!user) {
+      toast.error('Você precisa estar logado para comprar');
+      return;
+    }
+
+    if (balance < product.price) {
+      toast.error('Saldo insuficiente');
+      return;
+    }
+
+    // Deduct balance
+    setBalance(prev => prev - product.price);
+
+    // Record purchase
+    const { error } = await supabase
+      .from('purchases')
+      .insert({
+        buyer_id: user.id,
+        product_id: product.id,
+        product_title: product.title,
+        product_type: product.type,
+        product_price: product.price,
+        seller_id: null
+      });
+
+    if (error) {
+      console.error('Error recording purchase:', error);
+      // Refund on error
+      setBalance(prev => prev + product.price);
+      toast.error('Erro ao processar compra');
+    } else {
+      toast.success(`${product.title} comprado com sucesso!`);
+    }
+  };
+
+  const getBadgeStyle = (badge: string | null) => {
+    switch (badge) {
+      case 'VIP':
+        return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white';
+      case 'VIDEO':
+        return 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white';
+      case 'PACK':
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white';
+      case 'PROMO':
+        return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white';
+      default:
+        return 'bg-secondary text-foreground';
+    }
+  };
+
   return (
-    <div className="h-full overflow-y-auto hide-scrollbar bg-background">
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Loja</h2>
-            <p className="text-sm text-muted-foreground">Itens exclusivos para você</p>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-secondary rounded-xl">
-            <span className="text-lg">💎</span>
-            <span className="font-bold text-foreground">{balance.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div className="relative mb-4">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar produtos..." className="pl-12 h-12 bg-secondary border-0 rounded-xl text-foreground placeholder:text-muted-foreground" />
-        </div>
-
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-          {CATEGORIES.map((category) => (
-            <button key={category} onClick={() => setSelectedCategory(category)} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all active:scale-95 ${selectedCategory === category ? 'gradient-primary text-primary-foreground shadow-pink-sm' : 'bg-secondary text-foreground hover:bg-secondary/80'}`}>
-              {category}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="px-4 py-4">
-        <div className="gradient-primary rounded-2xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary-foreground/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-5 h-5 text-gold fill-gold" />
-              <span className="text-xs font-bold text-primary-foreground uppercase tracking-wider">VIP</span>
+    <ScrollArea className="h-full bg-background">
+      <div className="pb-24">
+        {/* Header */}
+        <div className="px-4 pt-4 pb-2">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium tracking-wider">MARKETPLACE</p>
+              <h2 className="text-2xl font-bold text-foreground">Boutique</h2>
             </div>
-            <h3 className="text-2xl font-bold text-primary-foreground mb-2">Pacote Premium</h3>
-            <p className="text-sm text-primary-foreground/80 mb-4">Acesso ilimitado por 30 dias</p>
-            <button className="px-6 py-3 bg-primary-foreground text-primary rounded-xl font-semibold active:scale-95 transition-transform">Assinar Agora - R$ 49,90</button>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 px-3 py-1.5 rounded-full">
+                <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
+                <span className="text-sm font-bold text-white">{balance.toLocaleString()}</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground mt-0.5">BALANÇO</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Premium Banner */}
+        <div className="px-4 py-3">
+          <div className="relative rounded-2xl overflow-hidden h-36">
+            <div 
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800)' }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-600/90 via-purple-600/80 to-pink-500/70" />
+            <div className="relative z-10 h-full flex flex-col justify-center px-5">
+              <p className="text-[10px] text-white/80 font-medium tracking-wider mb-1">CINEMA PRIVADO</p>
+              <h3 className="text-xl font-bold text-white mb-1">Vídeos Premium</h3>
+              <p className="text-xs text-white/70 mb-3 max-w-[200px]">
+                Conteúdo em vídeo de alta qualidade disponível para compra individual e imediata.
+              </p>
+              <button className="w-fit px-4 py-2 bg-white text-foreground rounded-full text-xs font-semibold">
+                VER VÍDEOS
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Featured Creators */}
+        <div className="px-4 py-3">
+          <p className="text-xs text-muted-foreground font-medium tracking-wider mb-3">DESTAQUES DA SEMANA</p>
+          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+            {FEATURED_CREATORS.map((creator) => (
+              <button 
+                key={creator.id}
+                onClick={() => setSelectedCreator(selectedCreator === creator.id ? null : creator.id)}
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+              >
+                <div className={`w-14 h-14 rounded-full p-[2px] ${selectedCreator === creator.id ? 'bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500' : 'bg-border'}`}>
+                  <img 
+                    src={creator.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} 
+                    alt={creator.display_name || ''} 
+                    className="w-full h-full rounded-full object-cover border-2 border-background"
+                  />
+                </div>
+                <span className="text-xs font-medium text-foreground uppercase">
+                  {creator.display_name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="px-4 py-2">
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+            {CATEGORIES.map((category) => (
+              <button 
+                key={category} 
+                onClick={() => setSelectedCategory(category)} 
+                className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                  selectedCategory === category 
+                    ? 'bg-foreground text-background' 
+                    : 'bg-secondary text-muted-foreground'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        <div className="px-4 py-3">
+          <div className="grid grid-cols-2 gap-3">
+            {filteredProducts.map((product) => (
+              <div 
+                key={product.id} 
+                className="bg-card rounded-2xl overflow-hidden border border-border"
+              >
+                {/* Product Image */}
+                <div className="relative aspect-[4/5]">
+                  <img 
+                    src={product.image_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'} 
+                    alt={product.title}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Badge */}
+                  {product.badge && (
+                    <div className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold ${getBadgeStyle(product.badge)}`}>
+                      {product.badge === 'VIDEO' && <Play className="w-2.5 h-2.5 inline mr-0.5" />}
+                      {product.badge}
+                    </div>
+                  )}
+
+                  {/* Media count indicator */}
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
+                    {product.type === 'video' ? (
+                      <>
+                        <Play className="w-3 h-3 text-white" />
+                        <span className="text-[10px] text-white font-medium">05:20</span>
+                      </>
+                    ) : (
+                      <>
+                        <Images className="w-3 h-3 text-white" />
+                        <span className="text-[10px] text-white font-medium">15 FOTOS</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Product Info */}
+                <div className="p-3">
+                  <h4 className="font-semibold text-sm text-foreground line-clamp-1">{product.title}</h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    @{product.creator?.username || 'usuario'}
+                  </p>
+
+                  {/* Price and Buy */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-foreground">{product.price}</span>
+                      <img src={crisexToken} alt="CRISEX" className="w-3.5 h-3.5" />
+                    </div>
+                    <button 
+                      onClick={() => handleBuy(product)}
+                      className="flex items-center gap-1 px-3 py-1.5 gradient-primary rounded-full text-xs font-semibold text-white active:scale-95 transition-transform"
+                    >
+                      BUY <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Support Creators Section */}
+        <div className="px-4 py-6">
+          <div className="bg-secondary rounded-2xl p-4 text-center">
+            <p className="text-[10px] text-muted-foreground font-medium tracking-wider mb-1">SUPORTE ÀS CREATORS</p>
+            <h3 className="text-lg font-bold text-foreground italic">Compre Individualmente</h3>
           </div>
         </div>
       </div>
-
-      <div className="px-4 pb-24">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-foreground">Produtos</h3>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground"><TrendingUp className="w-4 h-4" />Mais vendidos</div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {filteredItems.map((item, index) => (
-            <div key={item.id} className="bg-card rounded-2xl p-4 border border-border hover:border-primary/30 hover:shadow-pink-sm transition-all animate-fade-up cursor-pointer group" style={{ animationDelay: `${index * 0.1}s` }}>
-              <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">{item.image}</div>
-              <h4 className="font-semibold text-foreground mb-1">{item.name}</h4>
-              <div className="flex items-center gap-1 mb-2">
-                <Star className="w-3 h-3 text-gold fill-gold" />
-                <span className="text-xs text-foreground">{item.rating}</span>
-                <span className="text-xs text-muted-foreground">({item.sales.toLocaleString()} vendas)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-primary">R$ {item.price.toFixed(2).replace('.', ',')}</span>
-                {item.originalPrice && <span className="text-sm text-muted-foreground line-through">R$ {item.originalPrice.toFixed(2).replace('.', ',')}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button className="fixed bottom-24 right-4 w-14 h-14 gradient-primary rounded-2xl flex items-center justify-center shadow-glow z-50 active:scale-95 transition-transform">
-        <ShoppingBag className="w-6 h-6 text-primary-foreground" />
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center"><span className="text-xs font-bold text-destructive-foreground">2</span></div>
-      </button>
-    </div>
+    </ScrollArea>
   );
 }
