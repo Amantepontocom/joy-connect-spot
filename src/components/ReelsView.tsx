@@ -360,19 +360,134 @@ export function ReelsView({ balance, setBalance }: ReelsViewProps) {
 
   if (!reel) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-black">
-        <div className="text-white text-center">
-          <p className="text-lg mb-2">Nenhum reel disponível</p>
-          <p className="text-sm text-white/60">Seja o primeiro a criar um!</p>
+      <div className="h-full w-full flex flex-col bg-black">
+        {/* Category Filter Header */}
+        <div className="pt-2 safe-area-top">
+          <CategoryFilter 
+            selectedCategory={selectedCategory} 
+            onCategoryChange={setSelectedCategory}
+          />
         </div>
-        {/* FAB for empty state */}
-        {user && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="fixed bottom-24 right-4 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-glow z-40"
-          >
-            <Plus className="w-7 h-7 text-primary-foreground" />
-          </button>
+        
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+              <Video className="w-10 h-10 text-white/40" />
+            </div>
+            <p className="text-lg font-semibold mb-2">Nenhum reel disponível</p>
+            <p className="text-sm text-white/60 mb-6">Seja o primeiro a criar um!</p>
+            {user && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-6 py-3 gradient-primary rounded-full text-sm font-bold text-primary-foreground"
+              >
+                Criar Reel
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Create Reel Modal for empty state */}
+        {showCreateModal && (
+          <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowCreateModal(false)}>
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <div 
+              className="relative w-full max-h-[85vh] bg-card rounded-t-3xl p-6 animate-slide-up overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
+              
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-foreground">Novo Reel</h3>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center"
+                >
+                  <X className="w-4 h-4 text-foreground" />
+                </button>
+              </div>
+
+              {/* Thumbnail Upload */}
+              <div 
+                onClick={() => thumbnailInputRef.current?.click()}
+                className="relative aspect-[9/16] w-full max-w-[200px] mx-auto mb-4 bg-secondary rounded-xl overflow-hidden cursor-pointer border-2 border-dashed border-border hover:border-primary transition-colors"
+              >
+                {thumbnailPreview ? (
+                  <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                    <Image className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Thumbnail *</span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailSelect}
+                className="hidden"
+              />
+
+              {/* Video Upload */}
+              <button
+                onClick={() => videoInputRef.current?.click()}
+                className="w-full p-3 mb-4 bg-secondary rounded-xl flex items-center justify-center gap-2 border border-dashed border-border hover:border-primary transition-colors"
+              >
+                <Video className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {reelVideo ? reelVideo.name : 'Adicionar vídeo (opcional)'}
+                </span>
+              </button>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleVideoSelect}
+                className="hidden"
+              />
+
+              {/* Description */}
+              <textarea
+                value={newReel.description}
+                onChange={(e) => setNewReel({ ...newReel, description: e.target.value })}
+                placeholder="Descrição do reel..."
+                className="w-full p-3 mb-4 bg-secondary rounded-xl text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-24"
+              />
+
+              {/* Categories */}
+              <CategorySelector 
+                selectedCategories={newReelCategories}
+                onCategoriesChange={setNewReelCategories}
+                className="mb-4"
+              />
+
+              {/* Audio Name */}
+              <input
+                type="text"
+                value={newReel.audio_name}
+                onChange={(e) => setNewReel({ ...newReel, audio_name: e.target.value })}
+                placeholder="Nome do áudio (opcional)"
+                className="w-full p-3 mb-6 bg-secondary rounded-xl text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+
+              {/* Submit Button */}
+              <button
+                onClick={handleCreateReel}
+                disabled={uploading || !reelThumbnail || newReelCategories.length === 0}
+                className="w-full py-3 gradient-primary rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {uploading ? (
+                  <span className="text-sm font-bold text-primary-foreground">Publicando...</span>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-primary-foreground" />
+                    <span className="text-sm font-bold text-primary-foreground">Publicar Reel</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     );
