@@ -34,11 +34,11 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
   return (
     <div className={cn("w-full", className)}>
       {/* Gradient shadow from top */}
-      <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none z-40" />
+      <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none z-40" />
       
       <div 
         ref={containerRef}
-        className="relative z-50 flex items-center gap-2 overflow-x-auto hide-scrollbar px-3 py-3"
+        className="relative z-50 flex items-center gap-1.5 overflow-x-auto hide-scrollbar px-3 py-2"
       >
         {CATEGORIES.map((category) => {
           const isSelected = selectedCategory === category.id;
@@ -48,10 +48,10 @@ export function CategoryFilter({ selectedCategory, onCategoryChange, className }
               ref={isSelected ? selectedRef : null}
               onClick={() => onCategoryChange(category.id)}
               className={cn(
-                "flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all duration-200 whitespace-nowrap",
+                "flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all duration-200 whitespace-nowrap",
                 isSelected
                   ? "bg-white/10 border border-primary text-primary"
-                  : "bg-white/5 border border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+                  : "bg-white/5 border border-white/20 text-white/70 hover:text-white hover:bg-white/10"
               )}
             >
               {category.label}
