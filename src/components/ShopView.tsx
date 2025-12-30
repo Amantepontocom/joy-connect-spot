@@ -180,37 +180,37 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
     <ScrollArea className="h-full bg-background">
       <div className="pb-24">
         {/* Header */}
-        <div className="px-4 pt-4 pb-2">
-          <div className="flex items-center justify-between mb-1">
+        <div className="px-3 pt-3 pb-1">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground font-medium tracking-wider">MARKETPLACE</p>
-              <h2 className="text-2xl font-bold text-foreground">Boutique</h2>
+              <p className="text-[10px] text-muted-foreground font-medium tracking-wider">MARKETPLACE</p>
+              <h2 className="text-xl font-bold text-foreground">Boutique</h2>
             </div>
             <div className="flex flex-col items-end">
-              <div className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 px-3 py-1.5 rounded-full">
-                <img src={crisexToken} alt="CRISEX" className="w-4 h-4" />
-                <span className="text-sm font-bold text-white">{balance.toLocaleString()}</span>
+              <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-500 to-teal-500 px-2.5 py-1 rounded-full">
+                <img src={crisexToken} alt="CRISEX" className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold text-white">{balance.toLocaleString()}</span>
               </div>
-              <span className="text-[10px] text-muted-foreground mt-0.5">BALANÇO</span>
+              <span className="text-[9px] text-muted-foreground mt-0.5">BALANÇO</span>
             </div>
           </div>
         </div>
 
         {/* Premium Banner */}
-        <div className="px-4 py-3">
-          <div className="relative rounded-2xl overflow-hidden h-36">
+        <div className="px-3 py-2">
+          <div className="relative rounded-xl overflow-hidden h-32">
             <div 
               className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800)' }}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-pink-600/90 via-purple-600/80 to-pink-500/70" />
-            <div className="relative z-10 h-full flex flex-col justify-center px-5">
-              <p className="text-[10px] text-white/80 font-medium tracking-wider mb-1">CINEMA PRIVADO</p>
-              <h3 className="text-xl font-bold text-white mb-1">Vídeos Premium</h3>
-              <p className="text-xs text-white/70 mb-3 max-w-[200px]">
+            <div className="relative z-10 h-full flex flex-col justify-center px-4">
+              <p className="text-[9px] text-white/80 font-medium tracking-wider mb-0.5">CINEMA PRIVADO</p>
+              <h3 className="text-lg font-bold text-white mb-0.5">Vídeos Premium</h3>
+              <p className="text-[10px] text-white/70 mb-2 max-w-[180px] leading-tight">
                 Conteúdo em vídeo de alta qualidade disponível para compra individual e imediata.
               </p>
-              <button className="w-fit px-4 py-2 bg-white text-foreground rounded-full text-xs font-semibold">
+              <button className="w-fit px-3 py-1.5 bg-white text-foreground rounded-full text-[10px] font-semibold">
                 VER VÍDEOS
               </button>
             </div>
@@ -218,23 +218,23 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
         </div>
 
         {/* Featured Creators */}
-        <div className="px-4 py-3">
-          <p className="text-xs text-muted-foreground font-medium tracking-wider mb-3">DESTAQUES DA SEMANA</p>
-          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+        <div className="px-3 py-2">
+          <p className="text-[10px] text-muted-foreground font-medium tracking-wider mb-2">DESTAQUES DA SEMANA</p>
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
             {FEATURED_CREATORS.map((creator) => (
               <button 
                 key={creator.id}
                 onClick={() => setSelectedCreator(selectedCreator === creator.id ? null : creator.id)}
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                className="flex flex-col items-center gap-1 flex-shrink-0"
               >
-                <div className={`w-14 h-14 rounded-full p-[2px] ${selectedCreator === creator.id ? 'bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500' : 'bg-border'}`}>
+                <div className={`w-12 h-12 rounded-full p-[2px] ${selectedCreator === creator.id ? 'bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500' : 'bg-border'}`}>
                   <img 
                     src={creator.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} 
                     alt={creator.display_name || ''} 
                     className="w-full h-full rounded-full object-cover border-2 border-background"
                   />
                 </div>
-                <span className="text-xs font-medium text-foreground uppercase">
+                <span className="text-[10px] font-medium text-foreground uppercase">
                   {creator.display_name}
                 </span>
               </button>
@@ -243,13 +243,13 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
         </div>
 
         {/* Category Tabs */}
-        <div className="px-4 py-2">
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+        <div className="px-3 py-1">
+          <div className="flex gap-1.5 overflow-x-auto hide-scrollbar">
             {CATEGORIES.map((category) => (
               <button 
                 key={category} 
                 onClick={() => setSelectedCategory(category)} 
-                className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`px-3 py-1.5 rounded-full text-[10px] font-semibold whitespace-nowrap transition-all ${
                   selectedCategory === category 
                     ? 'bg-foreground text-background' 
                     : 'bg-secondary text-muted-foreground'
@@ -262,8 +262,8 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
         </div>
 
         {/* Products Grid */}
-        <div className="px-4 py-3">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="px-3 py-2">
+          <div className="grid grid-cols-2 gap-2">
             {filteredProducts.map((product) => (
               <div 
                 key={product.id} 
@@ -302,23 +302,23 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
                 </div>
 
                 {/* Product Info */}
-                <div className="p-3">
-                  <h4 className="font-semibold text-sm text-foreground line-clamp-1">{product.title}</h4>
-                  <p className="text-xs text-muted-foreground mb-2">
+                <div className="p-2">
+                  <h4 className="font-semibold text-xs text-foreground line-clamp-1">{product.title}</h4>
+                  <p className="text-[10px] text-muted-foreground mb-1.5">
                     @{product.creator?.username || 'usuario'}
                   </p>
 
                   {/* Price and Buy */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <span className="font-bold text-foreground">{product.price}</span>
-                      <img src={crisexToken} alt="CRISEX" className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-0.5">
+                      <span className="font-bold text-sm text-foreground">{product.price}</span>
+                      <img src={crisexToken} alt="CRISEX" className="w-3 h-3" />
                     </div>
                     <button 
                       onClick={() => handleBuy(product)}
-                      className="flex items-center gap-1 px-3 py-1.5 gradient-primary rounded-full text-xs font-semibold text-white active:scale-95 transition-transform"
+                      className="flex items-center gap-0.5 px-2.5 py-1 gradient-primary rounded-full text-[10px] font-semibold text-white active:scale-95 transition-transform"
                     >
-                      BUY <Plus className="w-3 h-3" />
+                      BUY <Plus className="w-2.5 h-2.5" />
                     </button>
                   </div>
                 </div>
@@ -328,10 +328,10 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
         </div>
 
         {/* Support Creators Section */}
-        <div className="px-4 py-6">
-          <div className="bg-secondary rounded-2xl p-4 text-center">
-            <p className="text-[10px] text-muted-foreground font-medium tracking-wider mb-1">SUPORTE ÀS CREATORS</p>
-            <h3 className="text-lg font-bold text-foreground italic">Compre Individualmente</h3>
+        <div className="px-3 py-4">
+          <div className="bg-secondary rounded-xl p-3 text-center">
+            <p className="text-[9px] text-muted-foreground font-medium tracking-wider mb-0.5">SUPORTE ÀS CREATORS</p>
+            <h3 className="text-base font-bold text-foreground italic">Compre Individualmente</h3>
           </div>
         </div>
       </div>
