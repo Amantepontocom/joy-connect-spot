@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Play, Images, Plus, X, ChevronLeft, ChevronRight, Heart, Share2, ShoppingBag } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Play, Images, Plus, X, ChevronLeft, ChevronRight, Heart, Share2, ShoppingBag, Upload, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import crisexToken from '@/assets/crisex-token.png';
 import { toast } from 'sonner';
 
@@ -44,6 +46,107 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    title: '',
+    description: '',
+    price: '',
+    type: 'pack',
+    badge: 'PACK'
+  });
+  const [productImage, setProductImage] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle image selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProductImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProductImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Create new product
+  const handleCreateProduct = async () => {
+    if (!user) {
+      toast.error('Você precisa estar logado');
+      return;
+    }
+
+    if (!newProduct.title || !newProduct.price) {
+      toast.error('Preencha título e preço');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      let imageUrl = null;
+
+      // Upload image if selected
+      if (productImage) {
+        const fileExt = productImage.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, productImage);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Insert product
+      const { error } = await supabase
+        .from('products')
+        .insert({
+          creator_id: user.id,
+          title: newProduct.title,
+          description: newProduct.description,
+          price: parseInt(newProduct.price),
+          type: newProduct.type,
+          badge: newProduct.badge,
+          image_url: imageUrl,
+          is_active: true
+        });
+
+      if (error) throw error;
+
+      toast.success('Produto criado com sucesso!');
+      setShowCreateModal(false);
+      setNewProduct({ title: '', description: '', price: '', type: 'pack', badge: 'PACK' });
+      setProductImage(null);
+      setProductImagePreview(null);
+
+      // Refresh products
+      const { data } = await supabase
+        .from('products')
+        .select(`*, creator:profiles!products_creator_id_fkey(username, display_name, avatar_url)`)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (data) setProducts(data);
+
+    } catch (error) {
+      console.error('Error creating product:', error);
+      toast.error('Erro ao criar produto');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Mock gallery images for product detail
   const getProductGallery = (product: Product) => {
@@ -429,6 +532,144 @@ export function ShopView({ balance, setBalance }: ShopViewProps) {
             </div>
           </div>
         )}
+
+        {/* Create Product Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={() => setShowCreateModal(false)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div 
+              className="relative w-full max-w-md max-h-[90vh] bg-card rounded-t-3xl sm:rounded-3xl overflow-hidden animate-slide-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ScrollArea className="max-h-[90vh]">
+                <div className="p-5">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-foreground">Criar Produto</h3>
+                    <button 
+                      onClick={() => setShowCreateModal(false)}
+                      className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center"
+                    >
+                      <X className="w-4 h-4 text-foreground" />
+                    </button>
+                  </div>
+
+                  {/* Image Upload */}
+                  <div className="mb-4">
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full aspect-video bg-secondary rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center overflow-hidden"
+                    >
+                      {productImagePreview ? (
+                        <img src={productImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <Camera className="w-8 h-8 text-muted-foreground mb-2" />
+                          <span className="text-sm text-muted-foreground">Adicionar imagem</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Title */}
+                  <div className="mb-3">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Título</label>
+                    <Input 
+                      value={newProduct.title}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Ex: Ensaio Exclusivo"
+                      className="bg-secondary border-0"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-3">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Descrição</label>
+                    <Textarea 
+                      value={newProduct.description}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Descreva seu produto..."
+                      className="bg-secondary border-0 min-h-[80px]"
+                    />
+                  </div>
+
+                  {/* Type */}
+                  <div className="mb-3">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Tipo</label>
+                    <div className="flex gap-2">
+                      {[
+                        { value: 'pack', label: 'Pack', badge: 'PACK' },
+                        { value: 'video', label: 'Vídeo', badge: 'VIDEO' },
+                        { value: 'vip', label: 'VIP', badge: 'VIP' },
+                      ].map((type) => (
+                        <button
+                          key={type.value}
+                          onClick={() => setNewProduct(prev => ({ ...prev, type: type.value, badge: type.badge }))}
+                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                            newProduct.type === type.value 
+                              ? 'gradient-primary text-white' 
+                              : 'bg-secondary text-muted-foreground'
+                          }`}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="mb-5">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Preço (CRISEX)</label>
+                    <div className="relative">
+                      <Input 
+                        type="number"
+                        value={newProduct.price}
+                        onChange={(e) => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
+                        placeholder="0"
+                        className="bg-secondary border-0 pr-10"
+                      />
+                      <img src={crisexToken} alt="CRISEX" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button 
+                    onClick={handleCreateProduct}
+                    disabled={uploading || !newProduct.title || !newProduct.price}
+                    className="w-full py-3 gradient-primary rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Criando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        Publicar Produto
+                      </>
+                    )}
+                  </button>
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Create Button */}
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="fixed bottom-24 right-4 w-14 h-14 gradient-primary rounded-full flex items-center justify-center shadow-glow z-40 active:scale-95 transition-transform"
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </button>
       </div>
     </ScrollArea>
   );
