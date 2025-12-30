@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, EyeOff, Coins, Plus, Upload, Camera, Video as VideoIcon } from 'lucide-react';
+import { Heart, Gift, Send, UserPlus, X, Play, Check, ShoppingBag, Package, Clock, Eye, EyeOff, Coins, Plus, Upload, Camera, Video as VideoIcon, Volume2, VolumeX } from 'lucide-react';
 import { LIVE_STREAMS, MIMOS } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
 import { playMimoSound, initAudioContext } from '@/lib/mimoSounds';
@@ -57,6 +57,7 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [metaProgress, setMetaProgress] = useState(2350);
   const [floatingMessages, setFloatingMessages] = useState<ChatMessage[]>([]);
   const [chatMessage, setChatMessage] = useState('');
@@ -498,6 +499,22 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
         </button>
         <button onClick={() => setShowMimos(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center active:scale-90 transition-all shadow-glow"><Gift className="w-5 h-5 text-primary-foreground" /></div><span className="text-[10px] text-foreground font-medium">Mimos</span></button>
         <button onClick={() => setShowCrisexModal(true)} className="flex flex-col items-center gap-1"><div className="w-12 h-12 bg-card/50 backdrop-blur-sm border border-primary/50 rounded-full flex items-center justify-center active:scale-90 transition-all"><Coins className="w-5 h-5 text-primary" /></div><span className="text-[10px] text-foreground font-medium">CRISEX</span></button>
+        
+        {/* Mute/Unmute Button */}
+        <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all ${
+            isMuted 
+              ? 'bg-primary/30 border border-primary/50' 
+              : 'bg-card/50 backdrop-blur-sm border border-border/30'
+          }`}>
+            {isMuted ? (
+              <VolumeX className="w-5 h-5 text-primary" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-foreground" />
+            )}
+          </div>
+          <span className="text-[10px] text-foreground font-medium">{isMuted ? 'Mudo' : 'Som'}</span>
+        </button>
         
         {/* Discrete Mode Button */}
         <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
