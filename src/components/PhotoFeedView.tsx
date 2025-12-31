@@ -4,7 +4,7 @@ import { AppMode } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
-import { CategorySelector, CategoryId } from '@/components/CategoryFilter';
+import { CategorySelector, CategoryId, CATEGORIES } from '@/components/CategoryFilter';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface PhotoFeedViewProps {
@@ -25,6 +25,7 @@ interface FeedPost {
   video_url?: string | null;
   price?: number;
   title?: string;
+  categories?: string[];
   creator?: {
     id: string;
     username: string | null;
@@ -47,6 +48,7 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
   const { user } = useAuth();
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [allPosts, setAllPosts] = useState<FeedPost[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -59,38 +61,51 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
   const [postType, setPostType] = useState<'reel' | 'product'>('reel');
   const [productPrice, setProductPrice] = useState(0);
   const [productTitle, setProductTitle] = useState('');
+  const [filterCategory, setFilterCategory] = useState<CategoryId | 'all'>('all');
 
   useEffect(() => {
     fetchFeed();
     fetchStories();
   }, []);
 
+  // Filter posts when category changes
+  useEffect(() => {
+    if (filterCategory === 'all') {
+      setPosts(allPosts);
+    } else {
+      const filtered = allPosts.filter(post => 
+        post.categories?.includes(filterCategory)
+      );
+      setPosts(filtered);
+    }
+  }, [filterCategory, allPosts]);
+
   const fetchFeed = async () => {
     setLoading(true);
     try {
-      // Fetch reels
+      // Fetch reels with categories
       const { data: reels, error: reelsError } = await supabase
         .from('reels')
         .select(`
-          id, thumbnail_url, description, creator_id, likes_count, comments_count, created_at, video_url,
+          id, thumbnail_url, description, creator_id, likes_count, comments_count, created_at, video_url, categories,
           profiles!reels_creator_id_fkey(id, username, display_name, avatar_url, is_vip)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (reelsError) throw reelsError;
 
-      // Fetch products (packs/videos for sale)
+      // Fetch products (packs/videos for sale) with categories
       const { data: products, error: productsError } = await supabase
         .from('products')
         .select(`
-          id, image_url, description, creator_id, created_at, price, title,
+          id, image_url, description, creator_id, created_at, price, title, categories,
           profiles!products_creator_id_fkey(id, username, display_name, avatar_url, is_vip)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (productsError) throw productsError;
 
@@ -106,6 +121,7 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
           created_at: r.created_at,
           type: 'reel' as const,
           video_url: r.video_url,
+          categories: r.categories || [],
           creator: r.profiles
         })),
         ...(products || []).map((p: any) => ({
@@ -119,10 +135,12 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
           type: 'product' as const,
           price: p.price,
           title: p.title,
+          categories: p.categories || [],
           creator: p.profiles
         }))
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+      setAllPosts(feedItems);
       setPosts(feedItems);
 
       // Fetch user likes
@@ -391,6 +409,35 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
 
   return (
     <div className="h-full overflow-y-auto hide-scrollbar bg-background">
+      {/* Category Filter */}
+      <div className="px-4 pt-4 pb-2 border-b border-border/50">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+          <button
+            onClick={() => setFilterCategory('all')}
+            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${
+              filterCategory === 'all'
+                ? 'gradient-primary text-primary-foreground shadow-pink-sm'
+                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Todos
+          </button>
+          {CATEGORIES.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setFilterCategory(category.id)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all ${
+                filterCategory === category.id
+                  ? 'gradient-primary text-primary-foreground shadow-pink-sm'
+                  : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+              }`}
+            >
+              {category.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Stories */}
       <div className="px-4 py-4 border-b border-border/50">
         <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
