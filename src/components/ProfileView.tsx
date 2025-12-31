@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Settings, Grid3X3, Film, Heart, Crown, Share2, UserPlus, MoreHorizontal, Edit2, TrendingUp, ChevronRight, Package, Video, LogOut, Play, ShoppingBag } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Settings, Grid3X3, Film, Heart, Crown, Share2, UserPlus, MoreHorizontal, Edit2, TrendingUp, ChevronRight, Package, Video, LogOut, Play, ShoppingBag, Camera, Check, X, CreditCard, Plus, Bookmark, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AppMode } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,8 +13,8 @@ import crisexToken from '@/assets/crisex-token.png';
 interface ProfileViewProps {
   balance: number;
   setBalance: (updater: (prev: number) => number) => void;
-  userImages: string[];
-  userPosts: { id: string; thumbnail: string; likes: number }[];
+  userImages?: string[];
+  userPosts?: { id: string; thumbnail: string; likes: number }[];
   onPlusClick?: () => void;
   onNavigate?: (mode: AppMode) => void;
 }
@@ -31,14 +34,6 @@ interface UserProduct {
   type: string;
 }
 
-interface UserLive {
-  id: string;
-  thumbnail_url: string | null;
-  title: string;
-  viewers_count: number;
-  is_active: boolean;
-}
-
 interface UserPurchase {
   id: string;
   product_title: string;
@@ -51,18 +46,43 @@ const TABS = [
   { id: 'posts', icon: Grid3X3, label: 'Posts' },
   { id: 'reels', icon: Film, label: 'Reels' },
   { id: 'products', icon: Package, label: 'Packs' },
-  { id: 'purchases', icon: ShoppingBag, label: 'Compras' }
+  { id: 'purchases', icon: Bookmark, label: 'Salvos' }
 ];
 
-export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewProps) {
-  const { user, profile, signOut } = useAuth();
+const RECHARGE_OPTIONS = [
+  { amount: 100, bonus: 0, price: 'R$ 10,00' },
+  { amount: 500, bonus: 50, price: 'R$ 45,00' },
+  { amount: 1000, bonus: 150, price: 'R$ 85,00' },
+  { amount: 2500, bonus: 500, price: 'R$ 200,00' },
+  { amount: 5000, bonus: 1500, price: 'R$ 380,00' },
+];
+
+export function ProfileView({ balance, setBalance, onPlusClick, onNavigate }: ProfileViewProps) {
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('posts');
   const [reels, setReels] = useState<UserReel[]>([]);
   const [products, setProducts] = useState<UserProduct[]>([]);
-  const [lives, setLives] = useState<UserLive[]>([]);
   const [purchases, setPurchases] = useState<UserPurchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
+  
+  // Edit Profile State
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editLocation, setEditLocation] = useState('Brasil');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Recharge State
+  const [showRecharge, setShowRecharge] = useState(false);
+  const [selectedRecharge, setSelectedRecharge] = useState<number | null>(null);
+  
+  // Share State
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  
+  // Settings State
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -70,12 +90,17 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
     }
   }, [user]);
 
+  useEffect(() => {
+    if (profile) {
+      setEditDisplayName(profile.display_name || '');
+    }
+  }, [profile]);
+
   const fetchUserContent = async () => {
     if (!user) return;
     setLoading(true);
 
     try {
-      // Fetch user reels
       const { data: userReels } = await supabase
         .from('reels')
         .select('id, thumbnail_url, likes_count, video_url')
@@ -85,7 +110,6 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
 
       setReels(userReels || []);
 
-      // Fetch user products (packs/videos)
       const { data: userProducts } = await supabase
         .from('products')
         .select('id, image_url, title, price, type')
@@ -95,17 +119,6 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
 
       setProducts(userProducts || []);
 
-      // Fetch user lives
-      const { data: userLives } = await supabase
-        .from('lives')
-        .select('id, thumbnail_url, title, viewers_count, is_active')
-        .eq('streamer_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      setLives(userLives || []);
-
-      // Fetch user purchases
       const { data: userPurchases } = await supabase
         .from('purchases')
         .select('id, product_title, product_price, product_type, created_at')
@@ -114,11 +127,10 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
 
       setPurchases(userPurchases || []);
 
-      // Calculate stats
       setStats({
         posts: (userReels?.length || 0) + (userProducts?.length || 0),
-        followers: Math.floor(Math.random() * 10000) + 100, // TODO: implement followers
-        following: Math.floor(Math.random() * 500) + 50 // TODO: implement following
+        followers: Math.floor(Math.random() * 10000) + 100,
+        following: Math.floor(Math.random() * 500) + 50
       });
 
     } catch (error) {
@@ -131,6 +143,104 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
   const handleSignOut = async () => {
     await signOut();
     toast({ title: "Até logo!", description: "Você foi desconectado." });
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('reel-media')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('reel-media')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      await refreshProfile();
+      toast({ title: "Foto atualizada!", description: "Sua foto de perfil foi alterada com sucesso." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          display_name: editDisplayName,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      setShowEditProfile(false);
+      toast({ title: "Perfil atualizado!", description: "Suas alterações foram salvas." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleRecharge = async (amount: number, bonus: number) => {
+    // Simulate payment
+    const totalAmount = amount + bonus;
+    setBalance(prev => prev + totalAmount);
+    
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ balance: balance + totalAmount, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+    }
+    
+    setShowRecharge(false);
+    setSelectedRecharge(null);
+    toast({ 
+      title: "Recarga realizada!", 
+      description: `+${totalAmount.toLocaleString()} CRISEX adicionados à sua conta.` 
+    });
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `https://amantes.com/@${profile?.username}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Perfil de @${profile?.username}`,
+          text: `Confira o perfil de ${profile?.display_name || profile?.username} no Amantes.com`,
+          url: shareUrl
+        });
+      } catch (error) {
+        console.log('Share cancelled');
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({ title: "Link copiado!", description: "O link do perfil foi copiado." });
+    }
+    setShowShareMenu(false);
   };
 
   const formatNumber = (num: number) => {
@@ -162,8 +272,11 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
         if (allPosts.length === 0) {
           return (
             <div className="flex flex-col items-center justify-center py-20 px-4">
-              <Grid3X3 className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-center">Nenhum post ainda</p>
+              <div className="w-20 h-20 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center mb-4">
+                <Grid3X3 className="w-10 h-10 text-muted-foreground/50" />
+              </div>
+              <p className="text-foreground font-semibold mb-1">Nenhuma publicação ainda</p>
+              <p className="text-muted-foreground text-sm text-center">Quando você compartilhar fotos e vídeos, eles aparecerão aqui.</p>
             </div>
           );
         }
@@ -174,7 +287,7 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
               <button 
                 key={item.id} 
                 className="aspect-square relative group animate-fade-in overflow-hidden" 
-                style={{ animationDelay: `${index * 0.05}s` }}
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
                 <img 
                   src={item.thumbnail_url} 
@@ -182,16 +295,16 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                 />
                 <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-colors flex items-center justify-center">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-white">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-white drop-shadow-lg">
                     {item.isProduct ? (
                       <>
                         <Package className="w-4 h-4" />
-                        <span className="font-semibold text-sm">{item.price}</span>
+                        <span className="font-bold text-sm">{item.price}</span>
                       </>
                     ) : (
                       <>
                         <Heart className="w-5 h-5 fill-current" />
-                        <span className="font-semibold">{formatNumber(item.likes_count || 0)}</span>
+                        <span className="font-bold">{formatNumber(item.likes_count || 0)}</span>
                       </>
                     )}
                   </div>
@@ -215,8 +328,11 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
         if (reels.length === 0) {
           return (
             <div className="flex flex-col items-center justify-center py-20 px-4">
-              <Film className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-center">Nenhum reel ainda</p>
+              <div className="w-20 h-20 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center mb-4">
+                <Film className="w-10 h-10 text-muted-foreground/50" />
+              </div>
+              <p className="text-foreground font-semibold mb-1">Nenhum reel ainda</p>
+              <p className="text-muted-foreground text-sm text-center">Seus vídeos curtos aparecerão aqui.</p>
             </div>
           );
         }
@@ -228,7 +344,7 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
                 key={reel.id} 
                 onClick={() => onNavigate?.(AppMode.REELS)}
                 className="aspect-[9/16] relative group animate-fade-in overflow-hidden" 
-                style={{ animationDelay: `${index * 0.05}s` }}
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
                 <img 
                   src={reel.thumbnail_url} 
@@ -249,9 +365,11 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
         if (products.length === 0) {
           return (
             <div className="flex flex-col items-center justify-center py-20 px-4">
-              <Package className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-center">Nenhum pack ou vídeo à venda</p>
-              <p className="text-xs text-muted-foreground mt-2">Crie conteúdo exclusivo para vender!</p>
+              <div className="w-20 h-20 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center mb-4">
+                <Package className="w-10 h-10 text-muted-foreground/50" />
+              </div>
+              <p className="text-foreground font-semibold mb-1">Nenhum pack à venda</p>
+              <p className="text-muted-foreground text-sm text-center">Crie conteúdo exclusivo para monetizar!</p>
             </div>
           );
         }
@@ -261,8 +379,8 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
             {products.map((product, index) => (
               <div 
                 key={product.id} 
-                className="bg-secondary rounded-xl overflow-hidden animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
+                className="bg-secondary rounded-2xl overflow-hidden animate-fade-in shadow-sm"
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
                 <div className="aspect-square relative">
                   <img 
@@ -292,9 +410,11 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
         if (purchases.length === 0) {
           return (
             <div className="flex flex-col items-center justify-center py-20 px-4">
-              <ShoppingBag className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-center">Nenhuma compra ainda</p>
-              <p className="text-xs text-muted-foreground mt-2">Explore packs e vídeos exclusivos!</p>
+              <div className="w-20 h-20 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center mb-4">
+                <Bookmark className="w-10 h-10 text-muted-foreground/50" />
+              </div>
+              <p className="text-foreground font-semibold mb-1">Nenhum item salvo</p>
+              <p className="text-muted-foreground text-sm text-center">Suas compras e favoritos aparecerão aqui.</p>
             </div>
           );
         }
@@ -304,8 +424,8 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
             {purchases.map((purchase, index) => (
               <div 
                 key={purchase.id} 
-                className="flex items-center gap-3 p-3 bg-secondary rounded-xl animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
+                className="flex items-center gap-3 p-4 bg-secondary rounded-2xl animate-fade-in"
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
                 <div className="w-14 h-14 gradient-primary rounded-xl flex items-center justify-center shrink-0">
                   {purchase.product_type === 'video' ? (
@@ -336,20 +456,26 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
 
   return (
     <div className="h-full overflow-y-auto hide-scrollbar bg-background">
-      <div className="px-6 pt-4 pb-6">
+      <div className="px-4 pt-4 pb-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">@{profile?.username || 'usuario'}</h2>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-secondary rounded-full transition-colors">
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setShowShareMenu(true)}
+              className="p-2.5 hover:bg-secondary rounded-xl transition-colors"
+            >
               <Share2 className="w-5 h-5 text-foreground" />
             </button>
-            <button className="p-2 hover:bg-secondary rounded-full transition-colors">
+            <button 
+              onClick={() => setShowSettings(true)}
+              className="p-2.5 hover:bg-secondary rounded-xl transition-colors"
+            >
               <MoreHorizontal className="w-5 h-5 text-foreground" />
             </button>
             <button 
               onClick={handleSignOut}
-              className="p-2 hover:bg-secondary rounded-full transition-colors"
+              className="p-2.5 hover:bg-secondary rounded-xl transition-colors"
             >
               <LogOut className="w-5 h-5 text-foreground" />
             </button>
@@ -357,30 +483,44 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
         </div>
 
         {/* Profile Info */}
-        <div className="flex items-start gap-6">
+        <div className="flex items-start gap-5">
           <div className="relative">
-            <div className="p-1 gradient-primary rounded-full animate-glow">
-              <img 
-                src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.username}`} 
-                alt="Profile" 
-                className="w-24 h-24 rounded-full object-cover border-4 border-background" 
-              />
-            </div>
             <button 
-              onClick={onPlusClick} 
-              className="absolute -bottom-1 -right-1 w-8 h-8 gradient-primary rounded-full flex items-center justify-center border-2 border-background shadow-lg"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative group"
+              disabled={uploading}
             >
-              <span className="text-primary-foreground text-lg font-bold">+</span>
+              <div className={`p-1 rounded-full ${uploading ? 'animate-pulse' : ''}`} style={{ background: 'var(--gradient-primary)' }}>
+                <img 
+                  src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.username}`} 
+                  alt="Profile" 
+                  className="w-20 h-20 rounded-full object-cover border-4 border-background" 
+                />
+              </div>
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 gradient-primary rounded-full flex items-center justify-center border-2 border-background shadow-lg">
+                <Plus className="w-4 h-4 text-primary-foreground" />
+              </div>
             </button>
+            <input 
+              ref={fileInputRef}
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleAvatarChange}
+            />
           </div>
+          
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg font-bold text-foreground">
                 {profile?.display_name || profile?.username || 'Usuário'}
               </h3>
               {profile?.is_vip && <Crown className="w-5 h-5 text-gold fill-gold" />}
             </div>
-            <div className="flex gap-6">
+            <div className="flex gap-5">
               <div className="text-center">
                 <p className="font-bold text-foreground">{stats.posts}</p>
                 <p className="text-xs text-muted-foreground">Posts</p>
@@ -398,27 +538,34 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
         </div>
 
         {/* Bio */}
-        <div className="mt-4">
+        <div className="mt-4 space-y-1">
           <p className="text-foreground text-sm leading-relaxed">
-            ✨ Criador de conteúdo premium 💕<br />
-            📍 Brasil<br />
-            💌 Contato: DM aberta
+            ✨ Criador de conteúdo premium 💕
           </p>
+          <p className="text-muted-foreground text-sm flex items-center gap-1">
+            <MapPin className="w-3 h-3" /> {editLocation}
+          </p>
+          <p className="text-muted-foreground text-sm">💌 Contato: DM aberta</p>
         </div>
 
         {/* Balance Card */}
-        <div className="mt-4 p-4 gradient-secondary rounded-2xl border border-border">
+        <div className="mt-5 p-4 bg-secondary/80 rounded-2xl border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
-                <span className="text-2xl">💎</span>
+              <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-pink-sm">
+                <img src={crisexToken} alt="CRISEX" className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Saldo CRISEX</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Saldo CRISEX</p>
                 <p className="text-xl font-bold text-foreground">{balance.toLocaleString()}</p>
               </div>
             </div>
-            <Button className="gradient-primary rounded-xl shadow-pink-sm">Adicionar</Button>
+            <Button 
+              onClick={() => setShowRecharge(true)}
+              className="gradient-primary rounded-xl shadow-pink-sm h-10 px-5 font-semibold"
+            >
+              Adicionar
+            </Button>
           </div>
         </div>
 
@@ -438,17 +585,21 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
         </button>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-4">
-          <Button variant="outline" className="flex-1 h-12 rounded-xl border-border">
-            <Edit2 className="w-5 h-5 mr-2" />
+        <div className="flex gap-3 mt-5">
+          <Button 
+            onClick={() => setShowEditProfile(true)}
+            variant="outline" 
+            className="flex-1 h-11 rounded-xl border-border font-semibold"
+          >
+            <Edit2 className="w-4 h-4 mr-2" />
             Editar Perfil
           </Button>
           <Button 
             onClick={() => onNavigate?.(AppMode.SHOP)}
             variant="outline" 
-            className="h-12 px-4 rounded-xl border-border"
+            className="h-11 px-4 rounded-xl border-border"
           >
-            <ShoppingBag className="w-5 h-5" />
+            <Bookmark className="w-5 h-5" />
           </Button>
         </div>
       </div>
@@ -459,8 +610,10 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
           <button 
             key={tab.id} 
             onClick={() => setActiveTab(tab.id)} 
-            className={`flex-1 py-4 flex items-center justify-center transition-colors ${
-              activeTab === tab.id ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'
+            className={`flex-1 py-4 flex items-center justify-center transition-all ${
+              activeTab === tab.id 
+                ? 'text-foreground border-b-2 border-foreground' 
+                : 'text-muted-foreground'
             }`}
           >
             <tab.icon className="w-6 h-6" />
@@ -472,6 +625,188 @@ export function ProfileView({ balance, onPlusClick, onNavigate }: ProfileViewPro
       <div className="pb-20">
         {renderContent()}
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent className="max-w-md mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Editar Perfil</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 py-4">
+            <div className="flex flex-col items-center gap-3">
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="relative group"
+              >
+                <img 
+                  src={profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.username}`} 
+                  alt="Profile" 
+                  className="w-24 h-24 rounded-full object-cover border-4 border-secondary" 
+                />
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-white" />
+                </div>
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="text-primary text-sm font-semibold"
+              >
+                Alterar foto
+              </button>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Nome de exibição</label>
+              <Input 
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                placeholder="Seu nome"
+                className="rounded-xl h-12"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Bio</label>
+              <Textarea 
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
+                placeholder="Conte um pouco sobre você..."
+                className="rounded-xl resize-none"
+                rows={3}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Localização</label>
+              <Input 
+                value={editLocation}
+                onChange={(e) => setEditLocation(e.target.value)}
+                placeholder="Ex: São Paulo, Brasil"
+                className="rounded-xl h-12"
+              />
+            </div>
+            
+            <div className="flex gap-3 pt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditProfile(false)}
+                className="flex-1 h-12 rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveProfile}
+                className="flex-1 h-12 rounded-xl gradient-primary shadow-pink-sm"
+              >
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recharge Dialog */}
+      <Dialog open={showRecharge} onOpenChange={setShowRecharge}>
+        <DialogContent className="max-w-md mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <CreditCard className="w-6 h-6 text-primary" />
+              Adicionar CRISEX
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {RECHARGE_OPTIONS.map((option) => (
+              <button
+                key={option.amount}
+                onClick={() => setSelectedRecharge(option.amount)}
+                className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${
+                  selectedRecharge === option.amount 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
+                    <img src={crisexToken} alt="CRISEX" className="w-7 h-7" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-foreground">
+                      {option.amount.toLocaleString()} CRISEX
+                    </p>
+                    {option.bonus > 0 && (
+                      <p className="text-xs text-emerald-500 font-medium">
+                        +{option.bonus.toLocaleString()} bônus
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-foreground">{option.price}</p>
+                  {selectedRecharge === option.amount && (
+                    <Check className="w-5 h-5 text-primary ml-auto mt-1" />
+                  )}
+                </div>
+              </button>
+            ))}
+            
+            <Button 
+              onClick={() => {
+                const opt = RECHARGE_OPTIONS.find(o => o.amount === selectedRecharge);
+                if (opt) handleRecharge(opt.amount, opt.bonus);
+              }}
+              disabled={!selectedRecharge}
+              className="w-full h-12 rounded-xl gradient-primary shadow-pink-sm mt-4 font-semibold"
+            >
+              Confirmar Recarga
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Menu Dialog */}
+      <Dialog open={showShareMenu} onOpenChange={setShowShareMenu}>
+        <DialogContent className="max-w-sm mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Compartilhar perfil</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <Button 
+              onClick={handleShare}
+              variant="outline"
+              className="w-full h-12 rounded-xl justify-start gap-3"
+            >
+              <Share2 className="w-5 h-5" />
+              Copiar link do perfil
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="max-w-sm mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Configurações</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <button className="w-full p-4 rounded-xl hover:bg-secondary transition-colors text-left flex items-center gap-3">
+              <Settings className="w-5 h-5 text-muted-foreground" />
+              <span className="font-medium text-foreground">Configurações da conta</span>
+            </button>
+            <button className="w-full p-4 rounded-xl hover:bg-secondary transition-colors text-left flex items-center gap-3">
+              <Crown className="w-5 h-5 text-gold" />
+              <span className="font-medium text-foreground">Assinar VIP</span>
+            </button>
+            <button 
+              onClick={handleSignOut}
+              className="w-full p-4 rounded-xl hover:bg-destructive/10 transition-colors text-left flex items-center gap-3"
+            >
+              <LogOut className="w-5 h-5 text-destructive" />
+              <span className="font-medium text-destructive">Sair da conta</span>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
