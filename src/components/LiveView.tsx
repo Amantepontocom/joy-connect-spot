@@ -539,20 +539,6 @@ export function LiveView({ balance, setBalance }: LiveViewProps) {
           </div>
           <span className="text-[10px] text-foreground font-medium">Discreto</span>
         </button>
-        <button onClick={toggleDiscreteMode} className="flex flex-col items-center gap-1">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all ${
-            discreteMode 
-              ? 'bg-primary shadow-glow' 
-              : 'bg-card/50 backdrop-blur-sm border border-border/30'
-          }`}>
-            {discreteMode ? (
-              <EyeOff className="w-5 h-5 text-primary-foreground" />
-            ) : (
-              <Eye className="w-5 h-5 text-foreground" />
-            )}
-          </div>
-          <span className="text-[10px] text-foreground font-medium">Discreto</span>
-        </button>
       </div>
 
       {!isPlaying && (<button onClick={() => { setIsPlaying(true); initAudioContext(); }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center shadow-glow animate-pulse-slow"><Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" /></div><p className="text-center text-sm font-semibold text-foreground mt-3 tracking-wide">ENTRAR NA LIVE</p></button>)}
