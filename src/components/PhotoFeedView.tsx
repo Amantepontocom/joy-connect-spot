@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { CategorySelector, CategoryId, CATEGORIES } from '@/components/CategoryFilter';
+import { UserProfileModal } from '@/components/UserProfileModal';
 import crisexToken from '@/assets/crisex-token.png';
 
 interface PhotoFeedViewProps {
@@ -62,7 +63,8 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
   const [productPrice, setProductPrice] = useState(0);
   const [productTitle, setProductTitle] = useState('');
   const [filterCategory, setFilterCategory] = useState<CategoryId | 'all'>('all');
-
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   useEffect(() => {
     fetchFeed();
     fetchStories();
@@ -477,7 +479,15 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
               key={story.id} 
               className="flex flex-col items-center gap-2 shrink-0 animate-fade-in" 
               style={{ animationDelay: `${index * 0.1}s` }} 
-              onClick={() => story.is_live && onNavigate(AppMode.LIVE)}
+              onClick={() => {
+                if (story.is_live) {
+                  onNavigate(AppMode.LIVE);
+                } else if (index !== 0) {
+                  // Open profile for other users (not current user)
+                  setSelectedUserId(story.id);
+                  setShowUserProfile(true);
+                }
+              }}
             >
               <div className={`relative p-0.5 rounded-full ${story.is_live ? 'gradient-primary animate-glow' : story.has_story ? 'gradient-primary' : 'bg-border'}`}>
                 <div className="p-0.5 bg-background rounded-full">
@@ -754,6 +764,51 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
             </button>
           </div>
         </div>
+      )}
+
+      {/* User Profile Modal */}
+      {selectedUserId && (
+        <UserProfileModal
+          userId={selectedUserId}
+          isOpen={showUserProfile}
+          onClose={() => {
+            setShowUserProfile(false);
+            setSelectedUserId(null);
+          }}
+          onBuyProduct={async (productId, price, title, sellerId) => {
+            if (!user) return;
+            if (balance < price) {
+              toast({
+                title: "Saldo insuficiente",
+                description: `Você precisa de ${price} CRISEX.`,
+                variant: "destructive"
+              });
+              return;
+            }
+
+            try {
+              setBalance(prev => prev - price);
+              await supabase.from('purchases').insert({
+                buyer_id: user.id,
+                seller_id: sellerId,
+                product_id: productId,
+                product_title: title,
+                product_type: 'pack',
+                product_price: price,
+                creator_earnings: Math.floor(price * 0.7),
+                platform_commission: Math.floor(price * 0.3)
+              });
+
+              toast({
+                title: "Compra realizada!",
+                description: `Você comprou "${title}" por ${price} CRISEX.`
+              });
+            } catch (error) {
+              console.error('Error purchasing:', error);
+              setBalance(prev => prev + price);
+            }
+          }}
+        />
       )}
     </div>
   );
