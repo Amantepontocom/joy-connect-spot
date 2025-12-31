@@ -85,6 +85,23 @@ export default function Auth() {
           return;
         }
 
+        // Check if username already exists
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', username.trim())
+          .maybeSingle();
+
+        if (existingUser) {
+          toast({
+            title: 'Erro',
+            description: 'Este nome de usuário já está em uso. Escolha outro.',
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -102,6 +119,12 @@ export default function Auth() {
             toast({
               title: 'Erro',
               description: 'Este email já está cadastrado. Tente fazer login.',
+              variant: 'destructive',
+            });
+          } else if (error.message.includes('Database error')) {
+            toast({
+              title: 'Erro',
+              description: 'Este nome de usuário já está em uso. Escolha outro.',
               variant: 'destructive',
             });
           } else {
