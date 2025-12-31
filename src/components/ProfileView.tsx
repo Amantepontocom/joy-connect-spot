@@ -93,6 +93,8 @@ export function ProfileView({ balance, setBalance, onPlusClick, onNavigate }: Pr
   useEffect(() => {
     if (profile) {
       setEditDisplayName(profile.display_name || '');
+      setEditBio((profile as any).bio || '✨ Criador de conteúdo premium 💕');
+      setEditLocation((profile as any).location || 'Brasil');
     }
   }, [profile]);
 
@@ -189,7 +191,9 @@ export function ProfileView({ balance, setBalance, onPlusClick, onNavigate }: Pr
         .from('profiles')
         .update({ 
           display_name: editDisplayName,
-          updated_at: new Date().toISOString() 
+          bio: editBio,
+          location: editLocation,
+          updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
 
@@ -539,11 +543,11 @@ export function ProfileView({ balance, setBalance, onPlusClick, onNavigate }: Pr
 
         {/* Bio */}
         <div className="mt-4 space-y-1">
-          <p className="text-foreground text-sm leading-relaxed">
-            ✨ Criador de conteúdo premium 💕
+          <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
+            {editBio || '✨ Criador de conteúdo premium 💕'}
           </p>
           <p className="text-muted-foreground text-sm flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> {editLocation}
+            <MapPin className="w-3 h-3" /> {editLocation || 'Brasil'}
           </p>
           <p className="text-muted-foreground text-sm">💌 Contato: DM aberta</p>
         </div>
