@@ -172,30 +172,61 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
         `)
         .eq('is_active', true);
 
-      // Get recent content creators
-      const { data: creators } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url')
-        .limit(10);
+      // Get users who have posted content (reels or products)
+      const { data: reelCreators } = await supabase
+        .from('reels')
+        .select('creator_id')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      const { data: productCreators } = await supabase
+        .from('products')
+        .select('creator_id')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      // Get unique creator IDs with content
+      const creatorIds = new Set<string>();
+      (reelCreators || []).forEach((r: any) => creatorIds.add(r.creator_id));
+      (productCreators || []).forEach((p: any) => creatorIds.add(p.creator_id));
+
+      // Fetch profiles of creators with content
+      let creators: any[] = [];
+      if (creatorIds.size > 0) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', Array.from(creatorIds))
+          .limit(15);
+        creators = data || [];
+      }
 
       const liveUserIds = new Set((lives || []).map((l: any) => l.streamer_id));
 
       const storyList: Story[] = [];
       
-      // Add current user first
+      // Add current user first with their actual avatar
       if (user) {
+        const { data: currentUserProfile } = await supabase
+          .from('profiles')
+          .select('avatar_url, username, display_name')
+          .eq('id', user.id)
+          .maybeSingle();
+
         storyList.push({
           id: user.id,
           username: 'Você',
           display_name: 'Você',
-          avatar_url: null,
+          avatar_url: currentUserProfile?.avatar_url || null,
           is_live: liveUserIds.has(user.id),
-          has_story: false
+          has_story: creatorIds.has(user.id)
         });
       }
 
-      // Add other creators
-      (creators || []).forEach((c: any) => {
+      // Add other creators who have content
+      creators.forEach((c: any) => {
         if (c.id !== user?.id) {
           storyList.push({
             id: c.id,
@@ -203,7 +234,7 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
             display_name: c.display_name,
             avatar_url: c.avatar_url,
             is_live: liveUserIds.has(c.id),
-            has_story: Math.random() > 0.5 // Simulated for now
+            has_story: true // They have content
           });
         }
       });
