@@ -13,6 +13,7 @@ import { ChatView } from '@/components/ChatView';
 import { ShopView } from '@/components/ShopView';
 import { ProfileView } from '@/components/ProfileView';
 import { MonetizationView } from '@/components/MonetizationView';
+import { toast } from '@/hooks/use-toast';
 import crisexToken from '@/assets/crisex-token.png';
 
 const Index = () => {
@@ -20,6 +21,7 @@ const Index = () => {
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const [mode, setMode] = useState<AppMode>(AppMode.FEED);
   const [localBalance, setLocalBalance] = useState(1000);
+  const [pendingChatUserId, setPendingChatUserId] = useState<string | null>(null);
 
   // Sync balance with profile
   useEffect(() => {
@@ -87,6 +89,55 @@ const Index = () => {
     navigate('/auth');
   };
 
+  const handleStartChat = async (targetUserId: string) => {
+    if (!user) return;
+
+    try {
+      // Check if conversation already exists between these two users
+      const { data: existingConversation } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(participant_1.eq.${user.id},participant_2.eq.${targetUserId}),and(participant_1.eq.${targetUserId},participant_2.eq.${user.id})`)
+        .maybeSingle();
+
+      if (existingConversation) {
+        // Conversation exists, navigate to chat
+        setPendingChatUserId(targetUserId);
+        setMode(AppMode.CHAT);
+        toast({
+          title: "Abrindo conversa...",
+          description: "Navegando para o chat."
+        });
+        return;
+      }
+
+      // Create new conversation
+      const { error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          participant_1: user.id,
+          participant_2: targetUserId
+        });
+
+      if (convError) throw convError;
+
+      toast({
+        title: "Conversa criada!",
+        description: "Nova conversa iniciada."
+      });
+
+      setPendingChatUserId(targetUserId);
+      setMode(AppMode.CHAT);
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar a conversa.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen bg-background text-foreground font-sans overflow-hidden">
       {showHeader && (
@@ -118,7 +169,7 @@ const Index = () => {
       )}
 
       <main className="flex-1 overflow-hidden relative">
-        {mode === AppMode.FEED && <PhotoFeedView balance={localBalance} setBalance={updateBalance} onNavigate={setMode} />}
+        {mode === AppMode.FEED && <PhotoFeedView balance={localBalance} setBalance={updateBalance} onNavigate={setMode} onStartChat={handleStartChat} />}
         {mode === AppMode.REELS && <ReelsView balance={localBalance} setBalance={updateBalance} />}
         {mode === AppMode.LIVE && <LiveView balance={localBalance} setBalance={updateBalance} />}
         {mode === AppMode.CHAT && <ChatView />}

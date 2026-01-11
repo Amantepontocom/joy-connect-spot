@@ -36,9 +36,10 @@ interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onBuyProduct?: (productId: string, price: number, title: string, sellerId: string) => void;
+  onStartChat?: (userId: string) => void;
 }
 
-export function UserProfileModal({ userId, isOpen, onClose, onBuyProduct }: UserProfileModalProps) {
+export function UserProfileModal({ userId, isOpen, onClose, onBuyProduct, onStartChat }: UserProfileModalProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [reels, setReels] = useState<UserReel[]>([]);
@@ -241,6 +242,10 @@ export function UserProfileModal({ userId, isOpen, onClose, onBuyProduct }: User
                     <Button 
                       variant="outline" 
                       className="h-11 px-4 rounded-xl border-border"
+                      onClick={() => {
+                        onStartChat?.(userId);
+                        onClose();
+                      }}
                     >
                       <MessageCircle className="w-5 h-5" />
                     </Button>
