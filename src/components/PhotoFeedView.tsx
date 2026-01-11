@@ -12,6 +12,7 @@ interface PhotoFeedViewProps {
   balance: number;
   setBalance: (updater: (prev: number) => number) => void;
   onNavigate: (mode: AppMode) => void;
+  onStartChat?: (userId: string) => void;
 }
 
 interface FeedPost {
@@ -45,7 +46,7 @@ interface Story {
   has_story: boolean;
 }
 
-export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedViewProps) {
+export function PhotoFeedView({ balance, setBalance, onNavigate, onStartChat }: PhotoFeedViewProps) {
   const { user } = useAuth();
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -775,6 +776,7 @@ export function PhotoFeedView({ balance, setBalance, onNavigate }: PhotoFeedView
             setShowUserProfile(false);
             setSelectedUserId(null);
           }}
+          onStartChat={onStartChat}
           onBuyProduct={async (productId, price, title, sellerId) => {
             if (!user) return;
             if (balance < price) {
